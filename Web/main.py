@@ -1,7 +1,6 @@
-"""
-🌌 Professional Exoplanet Vetting Platform
-AI × Human Collaboration System
-"""
+# ======================================================
+# 🌌 EXOPLANET HUNTER v2.1 — Professional Vetting Platform
+# ======================================================
 
 import streamlit as st
 import numpy as np
@@ -17,121 +16,133 @@ st.set_page_config(
 # ---------- Styles ----------
 st.markdown("""
 <style>
-    .stApp { background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #0f3460 100%); color: #e0e0e0; }
-    .stApp::before { content:""; position:fixed; top:0; left:0; width:100%; height:100%;
+    /* Background + Global Colors */
+    .stApp {
+        background: radial-gradient(circle at 20% 30%, #0b0f1a 0%, #0e1630 50%, #0a0e27 100%);
+        color: #e0e0e0;
+        font-family: 'Inter', sans-serif;
+    }
+    /* Subtle star field overlay */
+    .stApp::before {
+        content:""; position:fixed; top:0; left:0; width:100%; height:100%;
         background-image:
-          radial-gradient(2px 2px at 20px 30px, #eee, rgba(0,0,0,0)),
-          radial-gradient(2px 2px at 60px 70px, #fff, rgba(0,0,0,0)),
-          radial-gradient(1px 1px at 50px 50px, #fff, rgba(0,0,0,0));
-        background-repeat:repeat; background-size:200px 200px; opacity:.4; z-index:-1;
-        animation: twinkle 3s ease-in-out infinite; }
-    @keyframes twinkle { 0%, 100% { opacity: .3; } 50% { opacity: .6; } }
+          radial-gradient(1px 1px at 20px 30px, #3fa9f5, rgba(0,0,0,0)),
+          radial-gradient(1px 1px at 60px 70px, #ffffff, rgba(0,0,0,0)),
+          radial-gradient(1px 1px at 90px 120px, #a0a0a0, rgba(0,0,0,0));
+        background-repeat:repeat; background-size:200px 200px;
+        opacity:.25; z-index:-1;
+    }
+    /* Title gradient */
     .space-title {
-        font-size: 4rem; font-weight: 900; text-align: center;
-        background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #4facfe);
-        background-size: 300% 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        animation: gradient-shift 3s ease infinite; padding: 2rem 0; letter-spacing: .1em;
+        font-size: 3.5rem; font-weight: 800; text-align: center;
+        background: linear-gradient(45deg, #3fa9f5, #4facfe, #00f2fe);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        letter-spacing: .1em; margin-bottom: 1rem;
     }
-    @keyframes gradient-shift { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-    .candidate-card {
-        background: linear-gradient(135deg, rgba(22,33,62,.95), rgba(15,52,96,.95));
-        border: 2px solid rgba(102,126,234,.3); border-radius: 20px; padding: 2rem; margin: 1.5rem 0;
-        box-shadow: 0 8px 32px rgba(31,38,135,.37); backdrop-filter: blur(10px);
+    /* KPI metrics */
+    .metric-container {
+        background: rgba(20, 30, 60, 0.7);
+        border: 1px solid rgba(63,169,245,.4);
+        border-radius: 12px; padding: 1.5rem; text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,.4);
     }
-    .metric-card {
-        background: rgba(22,33,62,.6); border: 1px solid rgba(102,126,234,.3); border-radius: 15px;
-        padding: 1.5rem; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,.3);
+    .metric-value { font-size: 2rem; font-weight: 700; color: #3fa9f5; }
+    .metric-label { color: #a0a0a0; font-size: 1rem; }
+    /* Card section */
+    .info-card {
+        background: rgba(15, 25, 45, 0.9);
+        border: 1px solid rgba(63,169,245,.3);
+        border-radius: 15px; padding: 2rem;
+        text-align: center; box-shadow: 0 4px 25px rgba(0,0,0,.4);
+        margin-top: 2rem;
     }
+    /* Buttons */
     .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white; border: none; border-radius: 15px; padding: 1rem 2rem; font-size: 1.1rem; font-weight: 600;
-        box-shadow: 0 4px 15px rgba(102,126,234,.4); transition: all .3s ease;
+        background: linear-gradient(135deg, #3fa9f5, #4facfe);
+        color: white; border: none; border-radius: 12px;
+        padding: 1rem 2rem; font-size: 1.1rem; font-weight: 600;
+        box-shadow: 0 4px 15px rgba(63,169,245,.4); transition: all .3s ease;
     }
-    .stButton > button:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(102,126,234,.6); }
+    .stButton > button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(63,169,245,.6);
+    }
+    /* Footer */
+    .footer {
+        text-align:center; color:#555; font-size:.9rem; margin-top:3rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Helper: navigate to pages/vetting.py ----------
+
+# ---------- Navigation Helper ----------
 def go_to_vetting():
-    """
-    Tries (1) native st.switch_page, (2) streamlit-extras switch_page_button,
-    else (3) query-params fallback (requires your pages read st.query_params).
-    """
-    # 1) Native Streamlit (>=1.25-ish)
+    """Navigate to pages/vetting.py"""
     if hasattr(st, "switch_page"):
         try:
             st.switch_page("pages/vetting.py")
             return
         except Exception:
             pass
-
-    # 2) Community extras
     try:
         from streamlit_extras.switch_page_button import switch_page
-        switch_page("vetting")   # uses page title/filename without .py
+        switch_page("vetting")
         return
     except Exception:
         pass
-
-    # 3) Fallback via query params (works if your multipage logic reads it)
     try:
         st.query_params.update(page="vetting")
     except Exception:
         st.experimental_set_query_params(page="vetting")
     st.rerun()
 
+
 # ---------- MAIN PAGE ----------
-st.markdown('<h1 class="space-title">🌌 EXOPLANET HUNTER</h1>', unsafe_allow_html=True)
+st.markdown('<h1 class="space-title">EXOPLANET HUNTER</h1>', unsafe_allow_html=True)
 st.markdown(
-    '<p style="text-align:center;font-size:1.5rem;color:#a0a0a0;letter-spacing:.2em;">'
-    'AI × HUMAN COLLABORATION PLATFORM</p>', unsafe_allow_html=True
+    '<p style="text-align:center;font-size:1.2rem;color:#b0b0b0;">'
+    'A Professional Exoplanet Vetting Platform — powered by <b>AI × Human Collaboration</b></p>',
+    unsafe_allow_html=True
 )
 
+# ----- KPI Metrics -----
+st.markdown("<br>", unsafe_allow_html=True)
+k1, k2, k3, k4 = st.columns(4)
+with k1:
+    st.markdown('<div class="metric-container"><div class="metric-value">12,430</div><div class="metric-label">Candidates Loaded</div></div>', unsafe_allow_html=True)
+with k2:
+    st.markdown('<div class="metric-container"><div class="metric-value">2,310</div><div class="metric-label">AI-Flagged</div></div>', unsafe_allow_html=True)
+with k3:
+    st.markdown('<div class="metric-container"><div class="metric-value">7,945</div><div class="metric-label">Human-Vetted</div></div>', unsafe_allow_html=True)
+with k4:
+    st.markdown('<div class="metric-container"><div class="metric-value">124</div><div class="metric-label">Confirmed</div></div>', unsafe_allow_html=True)
+
+# ----- Mission Section -----
 st.markdown("""
-<div class="candidate-card">
-  <h2 style='text-align:center;color:#667eea;'>✨ OUR MISSION ✨</h2>
-  <p style='text-align:center;font-size:1.3rem;line-height:1.8;margin-top:1rem;'>
-    Combining <strong>AI's Speed</strong> with <strong>Human Intuition</strong><br>
-    To discover new worlds in our universe
+<div class="info-card">
+  <h2 style='color:#3fa9f5;'>Our Mission</h2>
+  <p style='font-size:1.1rem;line-height:1.7;color:#ddd;'>
+  Combining the <b>Speed of AI</b> with the <b>Insight of Astronomers</b> <br>
+  to accelerate the discovery of <b>new worlds</b> beyond our solar system.
   </p>
 </div>
 """, unsafe_allow_html=True)
 
-c1, c2, c3 = st.columns(3)
-with c1:
-    st.markdown("""
-    <div class="metric-card">
-        <div style='font-size:3rem;margin-bottom:.5rem;'>🤖</div>
-        <h3 style='color:#667eea;'>AI Screening</h3>
-        <p style='color:#a0a0a0;'>Rapid analysis<br>Signal detection<br>Uncertainty flagging</p>
-    </div>
-    """, unsafe_allow_html=True)
-with c2:
-    st.markdown("""
-    <div class="metric-card">
-        <div style='font-size:3rem;margin-bottom:.5rem;'>👁️</div>
-        <h3 style='color:#4facfe;'>Human Vetting</h3>
-        <p style='color:#a0a0a0;'>Expert review<br>Intuitive swipes<br>Critical judgment</p>
-    </div>
-    """, unsafe_allow_html=True)
-with c3:
-    st.markdown("""
-    <div class="metric-card">
-        <div style='font-size:3rem;margin-bottom:.5rem;'>🔄</div>
-        <h3 style='color:#f093fb;'>Collaborative Learning</h3>
-        <p style='color:#a0a0a0;'>Model improvement<br>Contribution tracking<br>Continuous evolution</p>
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
-st.markdown("<br><br>", unsafe_allow_html=True)
+# ----- Navigation Buttons -----
+col1, col2, col3 = st.columns(3)
+with col1:
+    if st.button("🚀 Start Vetting", use_container_width=True):
+        go_to_vetting()
+with col2:
+    st.button("📊 Candidate Database", use_container_width=True)
+with col3:
+    st.button("👥 Contributions", use_container_width=True)
 
-# 🔗 Button -> pages/vetting.py
-if st.button("🚀 START VETTING", use_container_width=True, type="primary"):
-    go_to_vetting()
-
-st.markdown("<br><br>", unsafe_allow_html=True)
+# ----- Footer -----
 st.markdown("""
-<div style='text-align:center;color:#667eea;padding:2rem;'>
-  <p style='font-size:.9rem;opacity:.6;'>🌌 EXOPLANET HUNTER v2.1 | Professional Vetting Platform</p>
+<div class="footer">
+🌌 Exoplanet Hunter v2.1 | Inspired by ExoClock & NASA Exoplanet Archive
 </div>
 """, unsafe_allow_html=True)
