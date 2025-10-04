@@ -4,7 +4,7 @@ from components.banner import render_banner
 # ---------- Page Config ----------
 st.set_page_config(
     page_title="Exoplanet Hunter",
-    page_icon="🌌",
+    page_icon="Web/logo.png",
     layout="wide",
 )
 render_banner()
