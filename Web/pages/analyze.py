@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from scipy import stats
 import time
 import json
 import os
@@ -241,16 +242,14 @@ def load_feature_list():
         if os.path.exists(FEATURE_LIST_PATH):
             with open(FEATURE_LIST_PATH, 'r') as f:
                 feature_data = json.load(f)
-                # feature_list.json might be a list or dict with 'features' key
                 if isinstance(feature_data, list):
                     return feature_data
                 elif isinstance(feature_data, dict) and 'features' in feature_data:
                     return feature_data['features']
                 else:
-                    st.warning("⚠️ feature_list.json format not recognized. Using default features.")
+                    st.warning("⚠️ feature_list.json format not recognized.")
                     return None
         else:
-            st.warning(f"⚠️ feature_list.json not found at {FEATURE_LIST_PATH}")
             return None
     except Exception as e:
         st.error(f"❌ Error loading feature list: {str(e)}")
@@ -261,142 +260,124 @@ FEATURE_LIST = load_feature_list()
 
 # --- Feature Extraction Functions ---
 def extract_features(df):
-    """
-    Extract features from the light curve data
-    
-    If feature_list.json is available, it will use those features in the correct order.
-    Otherwise, it will use a default set of 20 features.
-    """
-    features = {}
-    
-    flux = df['flux'].values
-    time = df['time'].values
-    
-    # Calculate all possible features
-    all_features = {}
-    
-    # Basic Statistics
-    all_features['mean_flux'] = np.mean(flux)
-    all_features['std_flux'] = np.std(flux)
-    all_features['min_flux'] = np.min(flux)
-    all_features['max_flux'] = np.max(flux)
-    all_features['median_flux'] = np.median(flux)
-    all_features['flux_range'] = np.max(flux) - np.min(flux)
-    all_features['cv_flux'] = np.std(flux) / np.mean(flux) if np.mean(flux) != 0 else 0
-    
-    # Distribution Features
-    from scipy import stats
-    all_features['skewness'] = stats.skew(flux)
-    all_features['kurtosis'] = stats.kurtosis(flux)
-    all_features['percentile_75'] = np.percentile(flux, 75)
-    all_features['percentile_25'] = np.percentile(flux, 25)
-    all_features['percentile_90'] = np.percentile(flux, 90)
-    
-    # Trend Features
-    time_normalized = (time - np.min(time)) / (np.max(time) - np.min(time)) if np.max(time) != np.min(time) else time
-    slope, intercept, r_value, _, _ = stats.linregress(time_normalized, flux)
-    all_features['trend_slope'] = slope
-    all_features['trend_r2'] = r_value ** 2
-    all_features['linear_fit_error'] = np.mean(np.abs(flux - (slope * time_normalized + intercept)))
-    
-    # Variability Features
-    flux_diff = np.diff(flux)
-    all_features['mean_absolute_deviation'] = np.mean(np.abs(flux - np.mean(flux)))
-    all_features['flux_diff_mean'] = np.mean(flux_diff)
-    all_features['flux_diff_std'] = np.std(flux_diff)
-    all_features['flux_diff_max'] = np.max(np.abs(flux_diff))
-    
-    # Rolling Statistics
-    window = max(5, len(flux) // 20)
-    rolling_std = pd.Series(flux).rolling(window=window, center=True).std()
-    all_features['rolling_std_mean'] = np.nanmean(rolling_std)
-    all_features['rolling_std_max'] = np.nanmax(rolling_std)
-    all_features['rolling_std_min'] = np.nanmin(rolling_std)
-    
-    # Additional features
-    all_features['data_points'] = len(flux)
-    all_features['time_span'] = np.max(time) - np.min(time)
-    
-    # If feature list is available, return features in that exact order
-    if FEATURE_LIST:
-        for feature_name in FEATURE_LIST:
-            if feature_name in all_features:
-                features[feature_name] = all_features[feature_name]
-            else:
-                # If feature not computed, set to 0 and warn
-                st.warning(f"⚠️ Feature '{feature_name}' not found. Setting to 0.")
-                features[feature_name] = 0
-    else:
-        # Use default feature set
-        default_features = [
-            'mean_flux', 'std_flux', 'min_flux', 'max_flux', 'median_flux',
-            'flux_range', 'cv_flux', 'skewness', 'kurtosis', 'percentile_75',
-            'trend_slope', 'trend_r2', 'linear_fit_error', 'mean_absolute_deviation',
-            'flux_diff_mean', 'flux_diff_std', 'flux_diff_max',
-            'rolling_std_mean', 'rolling_std_max', 'rolling_std_min'
-        ]
-        for feature_name in default_features:
-            features[feature_name] = all_features[feature_name]
-    
-    return features
+    """Extract features from the light curve data"""
+    try:
+        features = {}
+        flux = df['flux'].values
+        time = df['time'].values
+        all_features = {}
+        
+        # Basic Statistics
+        all_features['mean_flux'] = np.mean(flux)
+        all_features['std_flux'] = np.std(flux)
+        all_features['min_flux'] = np.min(flux)
+        all_features['max_flux'] = np.max(flux)
+        all_features['median_flux'] = np.median(flux)
+        all_features['flux_range'] = np.max(flux) - np.min(flux)
+        all_features['cv_flux'] = np.std(flux) / np.mean(flux) if np.mean(flux) != 0 else 0
+        
+        # Distribution Features
+        all_features['skewness'] = stats.skew(flux)
+        all_features['kurtosis'] = stats.kurtosis(flux)
+        all_features['percentile_75'] = np.percentile(flux, 75)
+        all_features['percentile_25'] = np.percentile(flux, 25)
+        all_features['percentile_90'] = np.percentile(flux, 90)
+        
+        # Trend Features
+        time_normalized = (time - np.min(time)) / (np.max(time) - np.min(time)) if np.max(time) != np.min(time) else time
+        slope, intercept, r_value, _, _ = stats.linregress(time_normalized, flux)
+        all_features['trend_slope'] = slope
+        all_features['trend_r2'] = r_value ** 2
+        all_features['linear_fit_error'] = np.mean(np.abs(flux - (slope * time_normalized + intercept)))
+        
+        # Variability Features
+        flux_diff = np.diff(flux)
+        all_features['mean_absolute_deviation'] = np.mean(np.abs(flux - np.mean(flux)))
+        all_features['flux_diff_mean'] = np.mean(flux_diff)
+        all_features['flux_diff_std'] = np.std(flux_diff)
+        all_features['flux_diff_max'] = np.max(np.abs(flux_diff))
+        
+        # Rolling Statistics
+        window = max(5, len(flux) // 20)
+        rolling_std = pd.Series(flux).rolling(window=window, center=True).std()
+        all_features['rolling_std_mean'] = np.nanmean(rolling_std)
+        all_features['rolling_std_max'] = np.nanmax(rolling_std)
+        all_features['rolling_std_min'] = np.nanmin(rolling_std)
+        
+        # Additional features
+        all_features['data_points'] = len(flux)
+        all_features['time_span'] = np.max(time) - np.min(time)
+        
+        # If feature list is available, return features in that exact order
+        if FEATURE_LIST:
+            for feature_name in FEATURE_LIST:
+                if feature_name in all_features:
+                    features[feature_name] = all_features[feature_name]
+                else:
+                    features[feature_name] = 0
+        else:
+            # Use default feature set
+            default_features = [
+                'mean_flux', 'std_flux', 'min_flux', 'max_flux', 'median_flux',
+                'flux_range', 'cv_flux', 'skewness', 'kurtosis', 'percentile_75',
+                'trend_slope', 'trend_r2', 'linear_fit_error', 'mean_absolute_deviation',
+                'flux_diff_mean', 'flux_diff_std', 'flux_diff_max',
+                'rolling_std_mean', 'rolling_std_max', 'rolling_std_min'
+            ]
+            for feature_name in default_features:
+                if feature_name in all_features:
+                    features[feature_name] = all_features[feature_name]
+        
+        return features
+    except Exception as e:
+        st.error(f"❌ Feature extraction failed: {str(e)}")
+        return {}
 
-# --- YOUR AI MODEL INTEGRATION ---
+# --- Model Loading ---
 def load_model():
-    """
-    Load your trained model from models folder
-    """
+    """Load your trained model from models folder"""
     try:
         import joblib
-        # Load the model using the correct path
         if os.path.exists(MODEL_PATH):
             model = joblib.load(MODEL_PATH)
             return model
         else:
-            st.warning(f"⚠️ Model file not found at: {MODEL_PATH}")
-            st.info("Using demo mode with random predictions.")
+            st.warning(f"⚠️ Model file not found. Using demo mode.")
             return None
     except Exception as e:
         st.error(f"❌ Error loading model: {str(e)}")
         return None
 
+# --- Prediction Function ---
 def predict_with_model(features_dict, model=None):
-    """
-    Make predictions using your model
+    """Make predictions using your model"""
+    if not features_dict:
+        return {
+            'prediction': 'NOT_PLANET',
+            'confidence': 0.5,
+            'planet_probability': 0.3,
+            'not_planet_probability': 0.7,
+            'model_version': '20251004_211436',
+            'model_type': 'Stacking Ensemble',
+            'feature_count': 0
+        }
     
-    Args:
-        features_dict: Dictionary containing 20 extracted features
-        model: Your loaded model (if None, uses demo mode)
-    
-    Returns:
-        Dictionary with prediction results
-    """
-    
-    # Convert features to DataFrame (matching your model's expected format)
     features_df = pd.DataFrame([features_dict])
     
     if model is not None:
         try:
-            # Use your actual model
             prediction = model.predict(features_df)[0]
             probabilities = model.predict_proba(features_df)[0]
-            
-            # probabilities format: [NOT_PLANET_prob, PLANET_prob]
             not_planet_prob = probabilities[0]
             planet_prob = probabilities[1]
-            
-            # Determine confidence based on prediction
             confidence = planet_prob if prediction == 'PLANET' else not_planet_prob
-            
         except Exception as e:
             st.error(f"❌ Prediction error: {str(e)}")
-            st.info("💡 This might be due to feature mismatch. Please check if the 20 features match your model's training features.")
-            # Fallback to demo
             prediction = np.random.choice(['PLANET', 'NOT_PLANET'], p=[0.35, 0.65])
             planet_prob = np.random.uniform(0.3, 0.7)
             not_planet_prob = 1 - planet_prob
             confidence = max(planet_prob, not_planet_prob)
     else:
-        # Demo mode
         prediction = np.random.choice(['PLANET', 'NOT_PLANET'], p=[0.35, 0.65])
         planet_prob = np.random.uniform(0.3, 0.7)
         not_planet_prob = 1 - planet_prob
@@ -414,6 +395,7 @@ def predict_with_model(features_dict, model=None):
     
     return results
 
+# --- Visualization Function ---
 def create_visualization_plot(df, features):
     """Create advanced visualization plots"""
     fig = make_subplots(
@@ -425,7 +407,12 @@ def create_visualization_plot(df, features):
         horizontal_spacing=0.1
     )
     
-    # 1. Time Series - Brighter colors
+    mean_flux = features.get('mean_flux', df['flux'].mean())
+    std_flux = features.get('std_flux', df['flux'].std())
+    flux_range = features.get('flux_range', df['flux'].max() - df['flux'].min())
+    cv_flux = features.get('cv_flux', std_flux / mean_flux if mean_flux != 0 else 0)
+    
+    # 1. Time Series
     fig.add_trace(
         go.Scatter(x=df['time'], y=df['flux'], mode='lines', name='Light Curve',
                    line=dict(color='#00d4ff', width=2),
@@ -433,24 +420,23 @@ def create_visualization_plot(df, features):
         row=1, col=1
     )
     
-    # Add mean line with better visibility
-    fig.add_hline(y=features['mean_flux'], line_dash="dash", line_color="#ffd700", 
+    fig.add_hline(y=mean_flux, line_dash="dash", line_color="#ffd700", 
                   line_width=2, annotation_text="Mean", annotation_font_color="#ffffff",
                   row=1, col=1)
     
-    # 2. Distribution Histogram - Brighter colors
+    # 2. Distribution Histogram
     fig.add_trace(
         go.Histogram(x=df['flux'], name='Distribution', nbinsx=50,
                      marker=dict(color='#a78bfa', opacity=0.8)),
         row=1, col=2
     )
     
-    # 3. Detrended Signal - Brighter colors
-    from scipy import stats
-    time_normalized = (df['time'] - df['time'].min()) / (df['time'].max() - df['time'].min())
-    slope, intercept, _, _, _ = stats.linregress(time_normalized, df['flux'])
-    trend = slope * time_normalized + intercept
-    detrended = df['flux'] - trend
+    # 3. Detrended Signal
+    flux = df['flux'].values
+    time_norm = (df['time'] - df['time'].min()) / (df['time'].max() - df['time'].min())
+    slope, intercept, _, _, _ = stats.linregress(time_norm, flux)
+    trend = slope * time_norm + intercept
+    detrended = flux - trend
     
     fig.add_trace(
         go.Scatter(x=df['time'], y=detrended, mode='lines', name='Detrended',
@@ -458,15 +444,15 @@ def create_visualization_plot(df, features):
         row=2, col=1
     )
     
-    # 4. Top Features Bar Chart - Brighter colors
+    # 4. Top Features Bar Chart
     feature_names = ['Mean', 'Std', 'Range', 'CV', 'Skew', 'Trend']
     feature_values = [
-        abs(features['mean_flux']), 
-        abs(features['std_flux']), 
-        abs(features['flux_range']),
-        abs(features['cv_flux']),
-        abs(features['skewness']),
-        abs(features['trend_slope'])
+        abs(features.get('mean_flux', mean_flux)), 
+        abs(features.get('std_flux', std_flux)), 
+        abs(features.get('flux_range', flux_range)),
+        abs(features.get('cv_flux', cv_flux)),
+        abs(features.get('skewness', stats.skew(flux))),
+        abs(features.get('trend_slope', slope))
     ]
     
     fig.add_trace(
@@ -475,7 +461,6 @@ def create_visualization_plot(df, features):
         row=2, col=2
     )
     
-    # Update layout with better contrast
     fig.update_layout(
         height=800,
         showlegend=True,
@@ -486,13 +471,11 @@ def create_visualization_plot(df, features):
         title_font_color='#ffffff'
     )
     
-    # Update axes with better visibility
     fig.update_xaxes(gridcolor='rgba(102, 126, 234, 0.4)', gridwidth=1,
                      title_font_color='#ffffff', tickfont_color='#e0e0e0')
     fig.update_yaxes(gridcolor='rgba(102, 126, 234, 0.4)', gridwidth=1,
                      title_font_color='#ffffff', tickfont_color='#e0e0e0')
     
-    # Update subplot titles color
     for annotation in fig['layout']['annotations']:
         annotation['font'] = dict(size=14, color='#ffffff', family='Arial')
     
@@ -501,7 +484,6 @@ def create_visualization_plot(df, features):
 # --- Main Application ---
 apply_premium_theme()
 
-# Header
 st.markdown('<h1 class="main-title">🪐 Exoplanet Detection AI Platform</h1>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Advanced Machine Learning · Stacking Ensemble Model · Real-time Classification</p>', unsafe_allow_html=True)
 
@@ -509,7 +491,6 @@ st.markdown('<p class="subtitle">Advanced Machine Learning · Stacking Ensemble 
 with st.sidebar:
     st.markdown("### ⚙️ Model Information")
     
-    # Check model and feature list status
     model_exists = os.path.exists(MODEL_PATH)
     features_exist = os.path.exists(FEATURE_LIST_PATH)
     
@@ -517,7 +498,6 @@ with st.sidebar:
         st.success("✅ Model Loaded")
     else:
         st.warning("⚠️ Demo Mode")
-        st.caption("Model file not found")
     
     if features_exist:
         st.success("✅ Features Loaded")
@@ -567,14 +547,13 @@ with st.sidebar:
     show_features = st.checkbox("Show Extracted Features", value=False)
     show_visualization = st.checkbox("Show Visualizations", value=True)
     
-    # Debug info
     with st.expander("🔧 Debug Info", expanded=False):
         st.code(f"Model Path:\n{MODEL_PATH}")
         st.code(f"Features Path:\n{FEATURE_LIST_PATH}")
         st.code(f"Model Exists: {os.path.exists(MODEL_PATH)}")
         st.code(f"Features Exist: {os.path.exists(FEATURE_LIST_PATH)}")
 
-# Main Content Area
+# Main Content
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     uploaded_file = st.file_uploader(
@@ -585,15 +564,12 @@ with col2:
 
 if uploaded_file is not None:
     try:
-        # Load Data
         with st.spinner('📥 Loading light curve data...'):
             df = pd.read_csv(uploaded_file)
             time.sleep(0.3)
         
-        # Show available columns
         st.info(f"📋 **Detected columns:** {', '.join(df.columns.tolist())}")
         
-        # Try to find time and flux columns (case-insensitive)
         time_col = None
         flux_col = None
         
@@ -604,7 +580,6 @@ if uploaded_file is not None:
             if col_lower in ['flux', 'fluxes', 'f', 'brightness', 'magnitude', 'mag', 'intensity']:
                 flux_col = col
         
-        # If not found automatically, let user select
         if time_col is None or flux_col is None:
             st.warning("⚠️ Could not automatically detect 'time' and 'flux' columns. Please select them manually:")
             
@@ -618,19 +593,15 @@ if uploaded_file is not None:
         else:
             st.success(f"✅ Auto-detected: Time='{time_col}', Flux='{flux_col}'")
         
-        # Rename columns to standard names
         df_processed = df.copy()
         df_processed['time'] = df[time_col]
         df_processed['flux'] = df[flux_col]
         
-        # Data Validation
         if time_col is None or flux_col is None:
             st.error("❌ Error: Please select both time and flux columns")
         else:
-            # Success Message
             st.success(f"✅ Light curve loaded successfully! {len(df_processed):,} data points")
             
-            # Data Preview
             with st.expander("📋 Data Preview", expanded=False):
                 col1, col2, col3 = st.columns(3)
                 col1.metric("Data Points", f"{len(df_processed):,}")
@@ -639,41 +610,36 @@ if uploaded_file is not None:
                 
                 st.dataframe(df_processed[['time', 'flux']].head(10), use_container_width=True)
             
-            # Analysis Button
             st.markdown("<br>", unsafe_allow_html=True)
             col1, col2, col3 = st.columns([1, 1, 1])
             with col2:
                 analyze_button = st.button("🚀 Run Exoplanet Detection", use_container_width=True)
             
             if analyze_button:
-                # Progress Bar
                 progress_bar = st.progress(0)
                 status_text = st.empty()
                 
-                # Step 1: Data Preprocessing
                 status_text.text("🔄 Step 1/5: Preprocessing light curve...")
                 progress_bar.progress(20)
                 time.sleep(0.4)
                 
-                # Step 2: Feature Extraction
                 status_text.text("🧠 Step 2/5: Extracting features...")
                 progress_bar.progress(40)
                 features = extract_features(df_processed)
+                if features:
+                    st.success(f"✅ Extracted {len(features)} features")
                 time.sleep(0.4)
                 
-                # Step 3: Load Model
                 status_text.text("⚡ Step 3/5: Loading AI model...")
                 progress_bar.progress(60)
                 model = load_model()
                 time.sleep(0.3)
                 
-                # Step 4: Prediction
                 status_text.text("🤖 Step 4/5: Running classification...")
                 progress_bar.progress(80)
                 results = predict_with_model(features, model)
                 time.sleep(0.4)
                 
-                # Step 5: Generate Report
                 status_text.text("📊 Step 5/5: Generating report...")
                 progress_bar.progress(100)
                 time.sleep(0.3)
@@ -681,12 +647,10 @@ if uploaded_file is not None:
                 progress_bar.empty()
                 status_text.empty()
                 
-                # Display Results
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown("## 🎯 Detection Results")
                 st.markdown("---")
                 
-                # Main Prediction
                 col1, col2, col3 = st.columns([1, 2, 1])
                 with col2:
                     prediction_class = "planet-detected" if results['prediction'] == 'PLANET' else "not-planet"
@@ -699,7 +663,6 @@ if uploaded_file is not None:
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # Confidence Metrics
                 st.markdown("### 📊 Classification Confidence")
                 col1, col2, col3, col4 = st.columns(4)
                 
@@ -737,14 +700,12 @@ if uploaded_file is not None:
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
-                # Model Info
                 col1, col2, col3 = st.columns(3)
                 col1.metric("Model Type", results['model_type'])
                 col2.metric("Model Version", results['model_version'])
                 col3.metric("Training Dataset", "23,289 samples")
                 
-                # Extracted Features
-                if show_features:
+                if show_features and features:
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("### 🔬 Extracted Features")
                     
@@ -775,14 +736,12 @@ if uploaded_file is not None:
                         
                         st.markdown("</div>", unsafe_allow_html=True)
                 
-                # Visualization
                 if show_visualization:
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("### 📉 Light Curve Analysis")
                     fig = create_visualization_plot(df_processed, features)
                     st.plotly_chart(fig, use_container_width=True)
                 
-                # AI Insights
                 st.markdown("<br>", unsafe_allow_html=True)
                 st.markdown("### 💡 AI Analysis Summary")
                 
@@ -803,17 +762,18 @@ if uploaded_file is not None:
                     else:
                         st.warning("⚠️ Consider collecting more data for better certainty")
                 
-                # Additional Stats
                 st.markdown("**Data Quality Indicators:**")
-                st.markdown(f"- Signal-to-Noise: {features['mean_flux'] / features['std_flux']:.2f}")
-                st.markdown(f"- Variability: {features['cv_flux']:.4f}")
+                mean_f = features.get('mean_flux', df_processed['flux'].mean())
+                std_f = features.get('std_flux', df_processed['flux'].std())
+                cv_f = features.get('cv_flux', std_f / mean_f if mean_f != 0 else 0)
+                
+                st.markdown(f"- Signal-to-Noise: {mean_f / std_f:.2f}")
+                st.markdown(f"- Variability: {cv_f:.4f}")
                 st.markdown(f"- Data Points: {len(df_processed):,}")
                 
-                # Download Report
                 st.markdown("<br>", unsafe_allow_html=True)
                 col1, col2, col3 = st.columns([1, 1, 1])
                 with col2:
-                    # Combine results and features
                     full_report = {**results, **features}
                     report_data = pd.DataFrame([full_report])
                     csv = report_data.to_csv(index=False)
@@ -828,10 +788,8 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ Error processing file: {str(e)}")
         st.exception(e)
-        st.info("💡 **Tips:**\n- Ensure your CSV has time and flux columns\n- Check that data is numeric\n- Try selecting columns manually if auto-detection fails")
 
 else:
-    # Empty State
     st.markdown("<br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -843,7 +801,6 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
-# Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("""
 <div style='text-align: center; color: #ffffff; padding: 2rem; border-top: 1px solid rgba(102, 126, 234, 0.4);'>
