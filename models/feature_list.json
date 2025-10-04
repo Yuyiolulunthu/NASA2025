@@ -1,20 +1,24 @@
 {
   "features": [
-    "koi_duration",
-    "koi_model_snr",
+    "duration",
+    "snr",
+    "planet_radius",
+    "tess_mag",
+    "depth",
+    "period",
     "duration_period_ratio",
-    "koi_steff",
-    "koi_depth",
-    "koi_prad",
-    "koi_period",
+    "distance",
+    "stellar_temp",
     "depth_radius_ratio",
-    "koi_srad",
-    "koi_slogg",
-    "koi_teq",
+    "stellar_logg",
+    "equil_temp",
+    "stellar_mass",
+    "stellar_radius",
+    "stellar_luminosity",
     "temp_insol_ratio",
-    "koi_insol",
+    "insolation",
     "log_snr"
   ],
-  "version": "20251004_004951",
-  "data_source": "NASA Kepler"
+  "version": "20251004_184044",
+  "data_source": "NASA TESS TOI"
 }
