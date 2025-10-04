@@ -15,7 +15,7 @@ st.set_page_config(
     page_title="Exoplanet Hunter",
     page_icon="🌌",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Dark Space Theme CSS
@@ -412,42 +412,82 @@ elif st.session_state.page == 'review':
     
     # Sidebar - Stellar Parameters
     with st.sidebar:
-        st.markdown("### 🌟 Stellar Parameters")
-        
+        # st.markdown("### 🌟 Stellar Parameters")
+        st.markdown('<h3 style="color: #FFFFFF; margin: 0;">🌟 Stellar Parameters</h3>', unsafe_allow_html=True)
+
         if idx < len(candidates):
             current = candidates[idx]
             
             st.markdown(f"""
             <div class="metric-card">
-                <h4 style='color: #667eea; margin-bottom: 1rem;'>{current['id']}</h4>
                 <div style='text-align: left; padding: 0.5rem;'>
-                    <p><strong>Color Index (B-V):</strong><br>{current['color_index']:.3f}</p>
-                    <p><strong>Effective Temp:</strong><br>{current['effective_temp']:.0f} K</p>
-                    <p><strong>SNR:</strong><br>{current['snr']:.1f}</p>
+                    <h4 style='color: #667eea; margin-bottom: 1rem; text-align: left; font-size: 1.1rem;'>{current['id']}</h4>
+                    <p style='color: #ffffff; margin: 0 0 0.75rem 0;'><strong>Color Index (B-V):</strong><br>{current['color_index']:.3f}</p>
+                    <p style='color: #ffffff; margin: 0 0 0.75rem 0;'><strong>Effective Temp:</strong><br>{current['effective_temp']:.0f} K</p>
+                    <p style='color: #ffffff; margin: 0;'><strong>SNR:</strong><br>{current['snr']:.1f}</p>
                 </div>
+             </div>
             </div>
             """, unsafe_allow_html=True)
             
             st.markdown("---")
-            st.markdown("### 📊 Quick Stats")
-            st.metric("Current Index", f"{idx + 1} / {len(candidates)}")
-            st.metric("Your Labels", len(st.session_state.labels))
-        
+            # st.markdown("### 📊 Quick Stats")
+            st.markdown('<h3 style="color: #FFFFFF; margin: 0;">📊 Quick Stats</h3>', unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div style="display:flex; gap:1rem;">
+            <div class="metric-card" style="padding:0.6rem;">
+                <div style="color:#a0a0a0; font-size:0.9rem;">Current Index</div>
+                <div style="color:#ffffff; font-size:1.1rem; font-weight:700;">{idx + 1} / {len(candidates)}</div>
+            </div>
+            <div class="metric-card" style="padding:0.6rem;">
+                <div style="color:#a0a0a0; font-size:0.9rem;">Your Labels</div>
+                <div style="color:#ffffff; font-size:1.1rem; font-weight:700;">{len(st.session_state.labels)}</div>
+            </div>
+            </div>
+            """, unsafe_allow_html=True)
+
         st.markdown("---")
-        st.markdown("### ℹ️ Instructions")
-        st.info("""
-        **Zoom & Pan:**
-        - Scroll to zoom
-        - Click & drag to pan
-        - Double-click to reset
+        # st.markdown("### ℹ️ Instructions")
+        st.markdown('<h3 style="color: #FFFFFF; margin: 0;">ℹ️ Instructions</h3>', unsafe_allow_html=True)
+        # st.info("""
+        # **Zoom & Pan:**
+        # - Scroll to zoom
+        # - Click & drag to pan
+        # - Double-click to reset
         
-        **Vetting:**
-        - Review light curve
-        - Check transit depth
-        - Examine periodicity
-        - Make judgment
-        """)
-    
+        # **Vetting:**
+        # - Review light curve
+        # - Check transit depth
+        # - Examine periodicity
+        # - Make judgment
+        # """)
+        st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, rgba(22,33,62,0.6), rgba(15,52,96,0.6));
+            border: 1px solid rgba(102,126,234,0.18);
+            border-radius: 12px;
+            padding: 0.6rem;
+            color: #ffffff;
+            box-shadow: 0 6px 18px rgba(102,126,234,0.04);
+        ">
+            <div style="font-weight:700; margin-bottom:0.35rem;">Zoom & Pan:</div>
+            <ul style="margin:0 0 0.4rem 1.1rem; color:#ffffff;">
+                <li>Scroll to zoom</li>
+                <li>Click & drag to pan</li>
+                <li>Double-click to reset</li>
+            </ul>
+            <div style="font-weight:700; margin-top:0.25rem; margin-bottom:0.25rem;">Vetting:</div>
+            <ul style="margin:0 0 0 1.1rem; color:#ffffff;">
+                <li>Review light curve</li>
+                <li>Check transit depth</li>
+                <li>Examine periodicity</li>
+                <li>Make judgment</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+
+
     # Main Content
     if idx >= len(candidates):
         st.markdown('<h1 class="space-title">🎉 VETTING COMPLETE!</h1>', unsafe_allow_html=True)
