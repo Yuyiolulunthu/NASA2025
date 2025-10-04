@@ -1,6 +1,3 @@
-"""
-使用 NASA 真實資料訓練系外行星檢測模型
-"""
 
 import numpy as np
 import pandas as pd
