@@ -1,0 +1,29 @@
+{
+  "model_name": "new_model",
+  "model_type": "stacking",
+  "version": "20251004_211436",
+  "feature_count": 20,
+  "class_count": 2,
+  "classes": [
+    "NOT_PLANET",
+    "PLANET"
+  ],
+  "datasets_used": [
+    {
+      "name": "tess",
+      "path": "./tois.csv",
+      "samples": 7703
+    },
+    {
+      "name": "kepler",
+      "path": "./data/kepler_koi.csv",
+      "samples": 9564
+    },
+    {
+      "name": "confirmed",
+      "path": "./data/confirmed_planets.csv",
+      "samples": 6022
+    }
+  ],
+  "total_samples": 23289
+}

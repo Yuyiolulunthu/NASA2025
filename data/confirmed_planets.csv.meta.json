@@ -1,0 +1,7 @@
+{
+  "dataset_name": "Confirmed Exoplanets",
+  "description": "\u6240\u6709\u5df2\u78ba\u8a8d\u7684\u7cfb\u5916\u884c\u661f\uff08\u7d9c\u5408\u8cc7\u6599\uff09",
+  "download_date": "2025-10-04T20:28:53.456090",
+  "filepath": "data\\confirmed_planets.csv",
+  "source": "NASA Exoplanet Archive"
+}
