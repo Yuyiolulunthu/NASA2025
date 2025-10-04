@@ -159,89 +159,84 @@ def render_vetting():
     total = len(candidates) if candidates else 0
     top_progress = (idx + 1) / total if total > 0 else 0
     pct = int(top_progress * 100)
-    st.markdown(
-    """
+    st.markdown(f"""
     <style>
-    .stApp { background: linear-gradient(135deg,#0a0e27 0%,#16213e 50%,#0f3460 100%); color:#ffffff; }
-    .stApp::before { content:""; position:fixed; inset:0; background-image:
-        radial-gradient(2px 2px at 20px 30px,#eee,rgba(0,0,0,0)),
-        radial-gradient(2px 2px at 60px 70px,#fff,rgba(0,0,0,0)),
-        radial-gradient(1px 1px at 50px 50px,#fff,rgba(0,0,0,0));
-        background-repeat:repeat; background-size:200px 200px; opacity:.4; z-index:-1;
-        animation: twinkle 3s ease-in-out infinite; }
-    @keyframes twinkle { 0%,100%{opacity:.3;} 50%{opacity:.6;} }
-    .candidate-card { background: linear-gradient(135deg, rgba(22,33,62,.95), rgba(15,52,96,.95));
-        border:2px solid rgba(102,126,234,.3); border-radius:20px; padding:2rem; margin:1.2rem 0;
-        box-shadow:0 8px 32px rgba(31,38,135,.37); backdrop-filter:blur(10px); color:#ffffff; }
-    .metric-card { background: rgba(22,33,62,.6); border:1px solid rgba(102,126,234,.3);
-        border-radius:15px; padding:1.2rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,.3); color:#ffffff; }
-    .confidence-bar { height:30px; border-radius:15px; background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981); position:relative; overflow:hidden; }
-    .confidence-indicator { position:absolute; top:0; left:0; height:100%; background:rgba(255,255,255,.3); border-right:3px solid #fff; box-shadow:0 0 20px rgba(255,255,255,.5); }
-    [data-testid="stSidebar"] { background: linear-gradient(180deg,#0a0e27 0%,#16213e 100%); color:#ffffff; }
+      /* reserve space so app content isn't hidden under the fixed bar */
+      body > .main, div.block-container, main[role="main"] {{ padding-top: 72px !important; }}
+      #top-progress {{ position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 9999; pointer-events: none; }}
+      #top-progress .wrap {{ height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 18px;
+                           background: rgba(10,14,39,0.70); backdrop-filter: blur(6px); box-shadow: 0 6px 20px rgba(2,6,23,0.6); }}
+      #top-progress .label {{ color: #e6f7ff; font-weight: 700; pointer-events: auto; min-width:160px; white-space:nowrap; }}
+      #top-progress .bar {{ flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }}
+      #top-progress .bar > i {{ display: block; height: 100%; width: {pct}%; background: linear-gradient(90deg,#4facfe,#667eea); border-radius: 999px; transition: width 400ms ease; }}
     </style>
-    """,
-        unsafe_allow_html=True,
-    )
+    <div id="top-progress">
+      <div class="wrap">
+        <div class="label">Candidate {idx+1} / {total} — {pct}%</div>
+        <div class="bar"><i></i></div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # Sidebar — Stellar parameters & stats
     with st.sidebar:
-        st.markdown("### 🌟 Stellar Parameters")
+        # st.markdown("### 🌟 Stellar Parameters")
+        st.markdown('<h3 style="margin:0;color:#ffffff;">🌟 Stellar Parameters</h3>', unsafe_allow_html=True)
         if idx < len(candidates):
             cur = candidates[idx]
             st.markdown(
                 f"""
-                <div style="background:linear-gradient(180deg, rgba(22,33,62,0.95), rgba(15,52,96,0.80));
-                            border:1px solid rgba(96,165,250,0.32); border-radius:12px;
-                            padding:1rem; box-shadow:0 8px 24px rgba(2,6,23,0.45); color:#ffffff;
-                            text-align:left;">
-                  <h4 style="color:#86a7ff;margin:0 0 0.9rem 0;text-align:center;font-weight:700;">{cur['id']}</h4>
-                  <div style="padding:0 .25rem;">
-                    <p style="margin:.6rem 0;"><strong>Color Index (B−V):</strong><br>{cur['color_index']:.3f}</p>
-                    <p style="margin:.6rem 0;"><strong>Effective Temp:</strong><br>{cur['effective_temp']:.0f} K</p>
-                    <p style="margin:.6rem 0;"><strong>SNR:</strong><br>{cur['snr']:.1f}</p>
+                <div class='metric-card' style='text-align:left;'>
+                  <h4 style='color:#667eea;margin:0 0 .15rem 0;text-align:left;line-height:1.1;'>{cur['id']}</h4>
+                  <div style='color:#ffffff;text-align:left;padding:0;margin:0;'>
+                    <p style='margin:.12rem 0;'><strong>Color Index (B−V):</strong><br>{cur['color_index']:.3f}</p>
+                    <p style='margin:.12rem 0;'><strong>Effective Temp:</strong><br>{cur['effective_temp']:.0f} K</p>
+                    <p style='margin:.12rem 0;'><strong>SNR:</strong><br>{cur['snr']:.1f}</p>
                   </div>
                 </div>
-                 """,
+                """,
                 unsafe_allow_html=True,
             )
             st.markdown("---")
-            st.markdown("### 📊 Quick Stats")
-            st.markdown(f"""
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              <div style="padding:.8rem 1rem;border-radius:12px;color:#ffffff;
-                          background:linear-gradient(180deg, rgba(22,33,62,0.95), rgba(15,52,96,0.80));
-                          border:1px solid rgba(96,165,250,0.32); box-shadow:0 8px 24px rgba(2,6,23,0.45);">
-                <div style="font-size:.85rem;color:#a0aec0;">Current Index</div>
-                <div style="font-weight:700;font-size:1.05rem;color:#ffffff;">{idx+1} / {len(candidates)}</div>
-              </div>
-              <div style="padding:.8rem 1rem;border-radius:12px;color:#ffffff;
-                          background:linear-gradient(180deg, rgba(22,33,62,0.95), rgba(15,52,96,0.80));
-                          border:1px solid rgba(96,165,250,0.32); box-shadow:0 8px 24px rgba(2,6,23,0.45);">
-                <div style="font-size:.85rem;color:#a0aec0;">Your Labels</div>
-                <div style="font-weight:700;font-size:1.05rem;color:#ffffff;">{len(st.session_state.labels)}</div>
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
-            st.markdown("---")
-        st.markdown("### ℹ️ Instructions")
+            # st.markdown("### 📊 Quick Stats")
+            st.markdown('<h3 style="margin:0;color:#ffffff;">📊 Quick Stats</h3>', unsafe_allow_html=True)
+            # 使用自訂 HTML 以確保文字為純白色
+            st.markdown(
+                f"""
+                <div style='display:flex;gap:0.6rem;flex-direction:column;'>
+                  <div class='metric-card' style='color:#ffffff;'>
+                    <div style='font-size:.85rem;color:#ffffff;'>Current Index</div>
+                    <div style='font-size:1.15rem;font-weight:700;color:#ffffff;margin-top:.4rem;'>{idx+1} / {len(candidates)}</div>
+                  </div>
+                  <div class='metric-card' style='color:#ffffff;'>
+                    <div style='font-size:.85rem;color:#ffffff;'>Your Labels</div>
+                    <div style='font-size:1.15rem;font-weight:700;color:#ffffff;margin-top:.4rem;'>{len(st.session_state.labels)}</div>
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        st.markdown("---")
+        st.markdown('<h3 style="margin:0;color:#ffffff;">ℹ️ Instructions</h3>', unsafe_allow_html=True)
+        # 使用 metric-card 包裹、與其他區塊一致的邊框樣式
         st.markdown(
             """
-            <div style="background:linear-gradient(180deg, rgba(22,33,62,0.95), rgba(15,52,96,0.80));
-                        border:1px solid rgba(96,165,250,0.32); border-radius:12px;
-                        padding:1rem; box-shadow:0 8px 24px rgba(2,6,23,0.45); color:#ffffff; text-align:left;">
-              <strong style="display:block;margin-bottom:10px;font-size:1.05rem;color:#ffffff;">Zoom &amp; Pan</strong>
-              <ul style="margin:6px 0 12px 20px;color:#e6eef8;line-height:1.8;">
-                <li>Scroll to zoom</li>
-                <li>Click &amp; drag to pan</li>
-                <li>Double-click to reset</li>
-              </ul>
-              <strong style="display:block;margin-top:6px;margin-bottom:10px;font-size:1.05rem;color:#ffffff;">Vetting</strong>
-              <ul style="margin:6px 0 0 20px;color:#e6eef8;line-height:1.8;">
-                <li>Review light curve</li>
-                <li>Check transit depth</li>
-                <li>Examine periodicity</li>
-                <li>Make judgment</li>
-              </ul>
+            <div class='metric-card' style='text-align:left;padding:.8rem;'>
+              <div style="color:#ffffff; font-size:0.95rem; line-height:1.45;">
+                <strong>Zoom &amp; Pan</strong>
+                <ul style="margin-top:.25rem;margin-bottom:.5rem;padding-left:1.2rem;">
+                  <li>Scroll to zoom</li>
+                  <li>Click &amp; drag to pan</li>
+                  <li>Double-click to reset</li>
+                </ul>
+                <strong>Vetting</strong>
+                <ul style="margin-top:.25rem;margin-bottom:.5rem;padding-left:1.2rem;">
+                  <li>Review light curve</li>
+                  <li>Check transit depth</li>
+                  <li>Examine periodicity</li>
+                  <li>Make judgment</li>
+                </ul>
+              </div>
             </div>
             """,
             unsafe_allow_html=True,
