@@ -35,7 +35,7 @@ class NASAExoplanetTrainer:
         
         Path("models").mkdir(exist_ok=True)
     
-    def load_tess_data(self, filepath='c:/Users/User/Desktop/Exo-planet/tois.csv'):
+    def load_tess_data(self, filepath='./tois.csv'):
         """載入 tess 資料"""
         print(f"📥 載入 tess 資料: {filepath}")
         
@@ -51,75 +51,89 @@ class NASAExoplanetTrainer:
         else:
             raise ValueError("找不到 TESS Disposition 或 TFOPWG Disposition 欄位")
         
-        # 建立標籤對應
-        label_mapping = {
-            'CONFIRMED': 'CONFIRMED',
-            'CANDIDATE': 'CANDIDATE',
-            'FALSE POSITIVE': 'FALSE POSITIVE',
-            'NOT DISPOSITIONED': None
-        }
+        # 先檢查實際的值
+        print(f"\n📊 '{disp_col}' 欄位的實際值:")
+        print(df[disp_col].value_counts())
+        print(f"\n所有唯一值: {df[disp_col].unique()}")
         
-        df['disposition'] = df[disp_col].map(label_mapping)
-        df = df.dropna(subset=['disposition'])
+        # 直接使用有效的值，過濾掉空值
+        df = df.dropna(subset=[disp_col])
+        df['disposition'] = df[disp_col]
         
-        print(f"✓ 過濾後資料: {df.shape}")
+        # 過濾掉明顯無效的標籤（如果有的話）
+        valid_dispositions = df['disposition'].value_counts()
+        print(f"\n✓ 過濾後資料: {df.shape}")
         print(f"\n類別分佈:")
-        print(df['disposition'].value_counts())
+        print(valid_dispositions)
         
         return df
 
     
     def engineer_features(self, df):
-        """特徵工程 - 使用 tess 真實欄位"""
+        """特徵工程 - 使用 TESS 真實欄位"""
         print("\n🔧 特徵工程...")
         
-        # tess 的主要特徵欄位
-        feature_columns = [
-            'koi_period',       # 軌道週期
-            'koi_duration',     # 凌日持續時間
-            'koi_depth',        # 凌日深度
-            'koi_prad',         # 行星半徑
-            'koi_teq',          # 平衡溫度
-            'koi_insol',        # 恆星輻射
-            'koi_model_snr',    # 信噪比
-            'koi_steff',        # 恆星溫度
-            'koi_srad',         # 恆星半徑
-            'koi_slogg',        # 恆星表面重力
-        ]
+        # TESS 的實際欄位名稱（從你的資料中確認）
+        feature_mapping = {
+            'Period (days)': 'period',
+            'Duration (hours)': 'duration',
+            'Depth (ppm)': 'depth',
+            'Planet Radius (R_Earth)': 'planet_radius',
+            'Planet Equil Temp (K)': 'equil_temp',
+            'Planet Insolation (Earth Flux)': 'insolation',
+            'Planet SNR': 'snr',
+            'Stellar Eff Temp (K)': 'stellar_temp',
+            'Stellar Radius (R_Sun)': 'stellar_radius',
+            'Stellar log(g) (cm/s^2)': 'stellar_logg',
+            'Stellar Mass (M_Sun)': 'stellar_mass',
+            'TESS Mag': 'tess_mag',
+            'Stellar Distance (pc)': 'distance'
+        }
         
-        # 只保留存在的欄位
-        available_features = [col for col in feature_columns if col in df.columns]
+        # 選擇存在的欄位
+        available_features = {}
+        for orig_name, new_name in feature_mapping.items():
+            if orig_name in df.columns:
+                available_features[orig_name] = new_name
         
-        X = df[available_features].copy()
+        print(f"找到 {len(available_features)} 個可用特徵:")
+        for orig, new in available_features.items():
+            print(f"  - {orig} -> {new}")
+        
+        # 建立特徵矩陣
+        X = df[list(available_features.keys())].copy()
+        X.columns = list(available_features.values())
         
         # 處理缺失值
-        print(f"缺失值處理前: {X.shape}")
-        
-        # 用中位數填補數值型欄位
+        print(f"\n缺失值處理:")
         for col in X.columns:
-            if X[col].isnull().any():
+            missing_count = X[col].isnull().sum()
+            if missing_count > 0:
                 median_val = X[col].median()
                 X[col].fillna(median_val, inplace=True)
-                print(f"  填補 {col}: {X[col].isnull().sum()} 個缺失值")
+                print(f"  填補 {col}: {missing_count} 個缺失值 (中位數={median_val:.2f})")
         
         # 衍生特徵
-        if 'koi_period' in X.columns and 'koi_duration' in X.columns:
-            X['duration_period_ratio'] = X['koi_duration'] / (X['koi_period'] * 24 + 1e-6)
+        if 'period' in X.columns and 'duration' in X.columns:
+            X['duration_period_ratio'] = X['duration'] / (X['period'] * 24 + 1e-6)
         
-        if 'koi_depth' in X.columns and 'koi_prad' in X.columns:
-            X['depth_radius_ratio'] = X['koi_depth'] / (X['koi_prad'] ** 2 + 1e-6)
+        if 'depth' in X.columns and 'planet_radius' in X.columns:
+            X['depth_radius_ratio'] = X['depth'] / (X['planet_radius'] ** 2 + 1e-6)
         
-        if 'koi_model_snr' in X.columns:
-            X['log_snr'] = np.log1p(X['koi_model_snr'])
+        if 'snr' in X.columns:
+            X['log_snr'] = np.log1p(X['snr'])
         
-        if 'koi_teq' in X.columns and 'koi_insol' in X.columns:
-            X['temp_insol_ratio'] = X['koi_teq'] / (X['koi_insol'] + 1e-6)
+        if 'equil_temp' in X.columns and 'insolation' in X.columns:
+            X['temp_insol_ratio'] = X['equil_temp'] / (X['insolation'] + 1e-6)
+        
+        if 'stellar_temp' in X.columns and 'stellar_radius' in X.columns:
+            X['stellar_luminosity'] = (X['stellar_radius'] ** 2) * ((X['stellar_temp'] / 5778) ** 4)
         
         # 移除無限值和極端值
         X = X.replace([np.inf, -np.inf], np.nan)
         X = X.fillna(X.median())
         
-        print(f"✓ 特徵工程完成: {X.shape[1]} 個特徵")
+        print(f"\n✓ 特徵工程完成: {X.shape[1]} 個特徵")
         print(f"特徵列表: {X.columns.tolist()}")
         
         return X
@@ -128,13 +142,18 @@ class NASAExoplanetTrainer:
         """特徵選擇"""
         print(f"\n🎯 特徵選擇 (Top {threshold})...")
         
+        # 🔧 修復: 先編碼標籤為整數
+        le_temp = LabelEncoder()
+        y_encoded = le_temp.fit_transform(np.array(y)).astype(np.int32)
+        
+        # 移除 class_weight 參數以避免兼容性問題
         lgbm = LGBMClassifier(
             n_estimators=100,
             random_state=42,
-            class_weight='balanced',
-            verbose=-1
+            verbose=-1,
+            n_jobs=1  # 避免 Windows 多進程問題
         )
-        lgbm.fit(X, y)
+        lgbm.fit(X, y_encoded)
         
         importances = pd.Series(
             lgbm.feature_importances_,
@@ -161,9 +180,9 @@ class NASAExoplanetTrainer:
                 n_estimators=200,
                 learning_rate=0.05,
                 max_depth=5,
-                class_weight='balanced',
                 random_state=42,
-                verbose=-1
+                verbose=-1,
+                n_jobs=1  # 避免 Windows 問題
             )),
             ('xgb', XGBClassifier(
                 n_estimators=200,
@@ -171,21 +190,23 @@ class NASAExoplanetTrainer:
                 max_depth=5,
                 random_state=42,
                 eval_metric='logloss',
-                verbosity=0
+                verbosity=0,
+                n_jobs=1
             )),
             ('catboost', CatBoostClassifier(
                 iterations=200,
                 learning_rate=0.05,
                 depth=5,
                 random_state=42,
-                verbose=False
+                verbose=False,
+                thread_count=1
             )),
             ('rf', RandomForestClassifier(
                 n_estimators=200,
                 max_depth=10,
                 class_weight='balanced',
                 random_state=42,
-                n_jobs=-1
+                n_jobs=1
             ))
         ]
         
@@ -199,7 +220,7 @@ class NASAExoplanetTrainer:
             estimators=base_learners,
             final_estimator=meta_learner,
             cv=3,
-            n_jobs=-1
+            n_jobs=1  # 避免 Windows 問題
         )
         
         print("✓ 模型構建完成")
@@ -233,7 +254,7 @@ class NASAExoplanetTrainer:
             stacking_model, X_scaled, y_encoded,
             cv=gkf.split(X_scaled, y_encoded, groups),
             method='predict_proba',
-            n_jobs=-1,
+            n_jobs=1,  # 避免 Windows 問題
             verbose=1
         )
         
@@ -304,7 +325,7 @@ class NASAExoplanetTrainer:
             'selected_features': self.selected_features,
             'version': version,
             'timestamp': datetime.now().isoformat(),
-            'data_source': 'NASA tess'
+            'data_source': 'NASA TESS TOI'
         }
         
         model_path = Path("models") / f"exoplanet_model_{version}.pkl"
@@ -315,7 +336,7 @@ class NASAExoplanetTrainer:
             json.dump({
                 'features': self.selected_features,
                 'version': version,
-                'data_source': 'NASA tess'
+                'data_source': 'NASA TESS TOI'
             }, f, indent=2)
         
         print(f"\n💾 模型已儲存: {model_path}")
@@ -329,13 +350,14 @@ def main():
     
     print("""
     ╔═══════════════════════════════════════════════════════╗
-    ║     NASA 真實資料訓練系統                              ║
+    ║                                                       ║
     ║     NASA Exoplanet Real Data Training                 ║
+    ║                                                       ║
     ╚═══════════════════════════════════════════════════════╝
     """)
     
     # 檢查資料檔案
-    data_file = 'c:/Users/User/Desktop/Exo-planet/tois.csv'
+    data_file = './tois.csv'  # 預設資料檔案路徑
     if not Path(data_file).exists():
         print(f"❌ 找不到 {data_file}")
         print("\n請先下載 NASA 資料：")
@@ -352,7 +374,14 @@ def main():
     # 特徵工程
     X = trainer.engineer_features(df)
     y = df['disposition']
-    groups = df['kepid'] if 'kepid' in df.columns else np.arange(len(df))
+    
+    # 使用 TIC ID 或 TOI 作為分組依據
+    if 'TIC ID' in df.columns:
+        groups = df['TIC ID']
+    elif 'TOI' in df.columns:
+        groups = df['TOI']
+    else:
+        groups = np.arange(len(df))
     
     # 特徵選擇
     X_selected = trainer.select_features(X, y, threshold=50)
