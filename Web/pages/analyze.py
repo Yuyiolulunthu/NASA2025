@@ -4,12 +4,21 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy import stats
+from components.banner import render_banner
 import time
 import json
 import os
 
 st.set_page_config(page_title="Exoplanet Detection AI", layout="wide", initial_sidebar_state="expanded")
-
+render_banner()
+hide_streamlit_header_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """
+st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 # Get the correct paths relative to the script location
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))  # Go up from Web/pages/ to project root

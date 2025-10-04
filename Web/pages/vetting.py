@@ -10,6 +10,7 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
+from components.banner import render_banner
 
 # ========== Page Config ==========
 st.set_page_config(
@@ -18,7 +19,15 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
+render_banner()
+hide_streamlit_header_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+    """
+st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 pio.templates.default = "plotly_dark"
 
 # ========== CSS ==========
