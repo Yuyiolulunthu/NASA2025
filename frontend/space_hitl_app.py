@@ -363,7 +363,7 @@ if st.session_state.page == 'home':
     with col2:
         if st.button("🚀 START VETTING", use_container_width=True, type="primary"):
             st.session_state.page = 'review'
-            st.rerun()
+            st.experimental_rerun()
     
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("---")
@@ -463,7 +463,7 @@ elif st.session_state.page == 'review':
         
         if st.button("🏠 Return Home", use_container_width=True):
             st.session_state.page = 'home'
-            st.rerun()
+            st.experimental_rerun()
     
     else:
         current = candidates[idx]
@@ -496,14 +496,16 @@ elif st.session_state.page == 'review':
         st.markdown(create_confidence_bar(current['ai_confidence']), unsafe_allow_html=True)
         
         # Light Curve Section
-        st.markdown("### 📈 Interactive Light Curve Analysis")
-        
+        # st.markdown("### 📈 Interactive Light Curve Analysis")
+        st.markdown('<h3 style="color: #FFFFFF; margin: 0;">📈 Interactive Light Curve Analysis</h3>', unsafe_allow_html=True)
+
         # Full light curve with zoom/pan
         fig_full = create_interactive_lightcurve(current)
         st.plotly_chart(fig_full, use_container_width=True, config={'displayModeBar': True, 'displaylogo': False})
         
         # Transit selector
-        st.markdown("### 🔍 Transit Detail View")
+        # st.markdown("### 🔍 Transit Detail View")
+        st.markdown('<h3 style="color: #FFFFFF; margin: 0;">🔍 Transit Detail View</h3>', unsafe_allow_html=True)
         col1, col2 = st.columns([3, 1])
         
         with col2:
@@ -518,7 +520,8 @@ elif st.session_state.page == 'review':
         st.plotly_chart(fig_zoom, use_container_width=True, config={'displayModeBar': False})
         
         # Physical Parameters
-        st.markdown("### 🔬 Physical Parameters")
+        # st.markdown("### 🔬 Physical Parameters")
+        st.markdown('<h3 style="color: #FFFFFF; margin: 0;">🔬 Physical Parameters</h3>', unsafe_allow_html=True)
         col1, col2, col3, col4 = st.columns(4)
         
         params = [
@@ -540,7 +543,8 @@ elif st.session_state.page == 'review':
         st.markdown("<br>", unsafe_allow_html=True)
         
         # Vetting Actions
-        st.markdown("### 🎯 Your Vetting Decision")
+        # st.markdown("### 🎯 Your Vetting Decision")
+        st.markdown('<h3 style="color: #FFFFFF; margin: 0;">🎯 Your Vetting Decision</h3>', unsafe_allow_html=True)
         
         col1, col2, col3 = st.columns(3)
         
@@ -550,7 +554,7 @@ elif st.session_state.page == 'review':
                 st.session_state.candidate_index += 1
                 st.success("✅ Marked as False Positive")
                 time.sleep(0.3)
-                st.rerun()
+                st.experimental_rerun()
         
         with col2:
             if st.button("👉 PLANET CANDIDATE", use_container_width=True, key="candidate"):
@@ -558,7 +562,7 @@ elif st.session_state.page == 'review':
                 st.session_state.candidate_index += 1
                 st.info("✅ Marked as Candidate")
                 time.sleep(0.3)
-                st.rerun()
+                st.experimental_rerun()
         
         with col3:
             if st.button("👆 CONFIRMED PLANET", use_container_width=True, key="confirmed", type="primary"):
@@ -567,7 +571,7 @@ elif st.session_state.page == 'review':
                 st.balloons()
                 st.success("✅ Confirmed as Planet!")
                 time.sleep(0.3)
-                st.rerun()
+                st.experimental_rerun()
         
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -579,17 +583,17 @@ elif st.session_state.page == 'review':
                 st.session_state.candidate_index -= 1
                 if len(st.session_state.labels) > 0:
                     st.session_state.labels.pop()
-                st.rerun()
+                st.experimental_rerun()
         
         with col2:
             if st.button("⏭️ Skip", use_container_width=True):
                 st.session_state.candidate_index += 1
-                st.rerun()
+                st.experimental_rerun()
         
         with col3:
             if st.button("🏠 Home", use_container_width=True):
                 st.session_state.page = 'home'
-                st.rerun()
+                st.experimental_rerun()
 
 # Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
