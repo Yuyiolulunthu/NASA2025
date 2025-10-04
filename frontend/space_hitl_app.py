@@ -363,7 +363,7 @@ if st.session_state.page == 'home':
     with col2:
         if st.button("🚀 START VETTING", use_container_width=True, type="primary"):
             st.session_state.page = 'review'
-            st.experimental_rerun()
+            st.rerun()
     
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("---")
@@ -463,7 +463,7 @@ elif st.session_state.page == 'review':
         
         if st.button("🏠 Return Home", use_container_width=True):
             st.session_state.page = 'home'
-            st.experimental_rerun()
+            st.rerun()
     
     else:
         current = candidates[idx]
@@ -554,7 +554,7 @@ elif st.session_state.page == 'review':
                 st.session_state.candidate_index += 1
                 st.success("✅ Marked as False Positive")
                 time.sleep(0.3)
-                st.experimental_rerun()
+                st.rerun()
         
         with col2:
             if st.button("👉 PLANET CANDIDATE", use_container_width=True, key="candidate"):
@@ -562,7 +562,7 @@ elif st.session_state.page == 'review':
                 st.session_state.candidate_index += 1
                 st.info("✅ Marked as Candidate")
                 time.sleep(0.3)
-                st.experimental_rerun()
+                st.rerun()
         
         with col3:
             if st.button("👆 CONFIRMED PLANET", use_container_width=True, key="confirmed", type="primary"):
@@ -571,7 +571,7 @@ elif st.session_state.page == 'review':
                 st.balloons()
                 st.success("✅ Confirmed as Planet!")
                 time.sleep(0.3)
-                st.experimental_rerun()
+                st.rerun()
         
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -583,17 +583,17 @@ elif st.session_state.page == 'review':
                 st.session_state.candidate_index -= 1
                 if len(st.session_state.labels) > 0:
                     st.session_state.labels.pop()
-                st.experimental_rerun()
+                st.rerun()
         
         with col2:
             if st.button("⏭️ Skip", use_container_width=True):
                 st.session_state.candidate_index += 1
-                st.experimental_rerun()
+                st.rerun()
         
         with col3:
             if st.button("🏠 Home", use_container_width=True):
                 st.session_state.page = 'home'
-                st.experimental_rerun()
+                st.rerun()
 
 # Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
