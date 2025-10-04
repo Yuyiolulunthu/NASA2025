@@ -39,7 +39,7 @@ timeout /t 2 /nobreak >nul
 
 REM 啟動 Streamlit
 echo ▶️  啟動 Streamlit Dashboard (port 8501)...
-start "Streamlit Dashboard" cmd /c "venv\Scripts\streamlit.exe run Web\pages\vetting.py --server.port 8501"
+start "Streamlit Dashboard" cmd /c "venv\Scripts\streamlit.exe run Web\main.py --server.port 8501"
 
 timeout /t 3 /nobreak >nul
 
