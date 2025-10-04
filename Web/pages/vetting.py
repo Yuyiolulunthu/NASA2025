@@ -1,341 +1,267 @@
-"""
-Exoplanet Vetting Platform — Enterprise (No Emoji)
-Transit selector above the chart, and radio option text forced white.
-Run:
-    streamlit run vetting_only.py
-"""
-
-import time
-import numpy as np
-import plotly.graph_objects as go
-import plotly.io as pio
+# Web/pages/about.py
 import streamlit as st
-from components.banner import render_banner
+import os
 
-# ========== Page Config ==========
+# ---- Banner (global) ----
+try:
+    from components.banner import render_banner
+except Exception:
+    render_banner = None
+
+# ---- Page config ----
 st.set_page_config(
-    page_title="Exoplanet Hunter — Vetting",
+    page_title="About Our Models — ExoMatch",
     page_icon="Web/logo.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
-render_banner()
-hide_streamlit_header_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """
-st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
-pio.templates.default = "plotly_dark"
 
-# ========== CSS ==========
-st.markdown(
-    """
+if render_banner:
+    render_banner()
+
+# Hide Streamlit default chrome (match other pages)
+st.markdown("""
 <style>
-  :root{
-    --bg-0:#0b1020; --bg-1:#111833;
-    --panel:#121a36; --panel-2:#141c3b;
-    --text-0:#e8ecf3; --text-1:#c8d0e3; --text-2:#8b95af;
-    --brand:#4d7cff; --accent:#2bd4a7; --ring:#27376f; --border:#1f2c5b;
-  }
-  .stApp{ background: radial-gradient(1100px 900px at 10% 0%, var(--bg-1), var(--bg-0)); color:var(--text-0); }
-  [data-testid="stSidebar"]{ background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%); border-right:1px solid var(--ring); }
-
-  /* === Radio 整段文字改為白色（含未選取項） === */
-  [data-testid="stRadio"] * { color:#ffffff !important; }
-  /* 更精準：僅作用在文字，不動圓點本身樣式 */
-  [data-testid="stRadio"] div[role="radiogroup"] label > div:nth-child(2),
-  [data-testid="stRadio"] label span { color:#ffffff !important; font-weight:500; }
-
-  /* Top bar */
-  body > .main, div.block-container, main[role="main"]{ padding-top:76px !important; }
-  #top-progress{ position:fixed; top:0; left:0; right:0; height:68px; z-index:9999; pointer-events:none; }
-  #top-progress .wrap{
-    height:100%; display:flex; align-items:center; gap:16px; padding:0 20px;
-    background:rgba(10,16,32,.72); backdrop-filter:blur(6px);
-    border-bottom:1px solid var(--ring); box-shadow:0 8px 24px rgba(0,0,0,.4);
-  }
-  #top-progress .label{ color:var(--text-0); font-weight:700; min-width:220px; letter-spacing:.2px; pointer-events:auto; }
-  #top-progress .bar{ flex:1; height:10px; background:rgba(255,255,255,.06); border-radius:999px; overflow:hidden; }
-  #top-progress .bar>i{ display:block; height:100%; background:linear-gradient(90deg, var(--brand), #7fa1ff); border-radius:999px; transition:width 380ms ease; }
-
-  /* Cards */
-  .card{ background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); border:1px solid var(--border);
-         border-radius:14px; padding:16px; box-shadow:0 6px 22px rgba(0,0,0,.30); }
-  .metric{ background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); border:1px solid var(--border);
-           border-radius:12px; padding:12px; }
-  .m-title{ color:var(--text-2); font-size:.85rem; margin:0 0 .2rem 0; }
-  .m-val{ color:#bcd2ff; font-size:1.2rem; font-weight:700; letter-spacing:.2px; }
-
-  /* Confidence bar */
-  .conf-wrap{ margin:8px 0 2px 0; }
-  .conf-bar{ height:26px; border-radius:999px; background:linear-gradient(90deg, #ef4444, #f59e0b, #10b981); position:relative; overflow:hidden; border:1px solid var(--ring);}
-  .conf-ind{ position:absolute; top:0; left:0; height:100%; background:rgba(255,255,255,.25); border-right:3px solid #fff; box-shadow:0 0 16px rgba(255,255,255,.35); }
-  .muted{ color:var(--text-2); }
-
-  /* Buttons */
-  .stButton>button{ border-radius:10px !important; border:1px solid var(--ring) !important; background:rgba(255,255,255,.05) !important; color:var(--text-0) !important; }
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
-# ========== Demo Data ==========
-if "candidate_index" not in st.session_state:
-    st.session_state.candidate_index = 0
-if "candidates" not in st.session_state:
-    st.session_state.candidates = []
-    rng = np.random.default_rng(7)
-    for i in range(10):
-        t = np.linspace(0, 50, 500)
-        f = 1 + rng.normal(0, 0.002, 500)
-        period = rng.uniform(5, 30)
-        events = []
-        for tt in np.arange(0, 50, period):
-            mask = (t > tt - 1) & (t < tt + 1)
-            f[mask] -= rng.uniform(0.005, 0.02)
-            events.append(float(tt))
-        st.session_state.candidates.append(
-            {
-                "id": f"TIC-{200000+i}",
-                "time": t,
-                "flux": f,
-                "period": float(period),
-                "depth": float(rng.uniform(0.5, 2.0)),
-                "duration": float(rng.uniform(2, 6)),
-                "snr": float(rng.uniform(10, 50)),
-                "radius_ratio": float(rng.uniform(0.05, 0.15)),
-                "ai_confidence": float(rng.uniform(0.5, 0.95)),
-                "transit_times": events[:3],
-                "color_index": float(rng.uniform(0.5, 1.5)),
-                "effective_temp": float(rng.uniform(4000, 7000)),
-            }
-        )
-if "labels" not in st.session_state:
-    st.session_state.labels = []
+# ---- Premium theme (copied & aligned with your other pages) ----
+def apply_premium_theme():
+    st.markdown("""
+    <style>
+        /* Global */
+        .stApp {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1729 100%);
+            color: #e0e0e0;
+        }
+        /* Title */
+        .main-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3rem; font-weight: 800; text-align: center;
+            margin-bottom: .4rem; letter-spacing: -1px;
+        }
+        .subtitle {
+            text-align: center; color: #d0d0d0; font-size: 1.05rem;
+            margin-bottom: 1.3rem; font-weight: 400;
+        }
+        /* Cards (same vibe as analysis/vetting) */
+        .analysis-card {
+            background: linear-gradient(135deg, rgba(22,33,62,.95), rgba(15,52,96,.95));
+            border: 2px solid rgba(102,126,234,.5);
+            border-radius: 20px; padding: 1.35rem 1.6rem; margin: 1rem 0 1.2rem 0;
+            box-shadow: 0 8px 32px rgba(31,38,135,.5); backdrop-filter: blur(10px);
+        }
+        .analysis-card h4, .analysis-card h5 { color: #ffffff !important; margin: 0 0 .35rem 0; }
+        .muted { color: #cbd5e1; }
+        .kpi {
+            display: inline-block; padding: .35rem .55rem; border-radius: 10px;
+            background: linear-gradient(135deg, rgba(102,126,234,.25), rgba(118,75,162,.25));
+            border: 1px solid rgba(102,126,234,.4); margin: .25rem .25rem 0 0;
+            font-weight: 700; color: #b9c3ff; font-size: .9rem;
+        }
+        /* Table */
+        table { width: 100%; border-collapse: collapse; }
+        thead th {
+            background: rgba(102,126,234,.25);
+            border-bottom: 1px solid rgba(102,126,234,.45);
+            color: #fff; text-align: left;
+        }
+        td, th { padding: .6rem .55rem; border-bottom: 1px solid rgba(102,126,234,.18); }
+        /* Lists */
+        .tight li { margin: .18rem 0; }
+        /* Section header */
+        .section-title {
+            font-weight: 800; letter-spacing: .2px; margin: .2rem 0 .6rem 0;
+        }
+        /* Subtle dividers */
+        .divider { height: 1px; background: rgba(102,126,234,.35); margin: 1.1rem 0; }
+        /* Layout container width */
+        .mx { max-width: 1150px; margin: 0 auto; }
+    </style>
+    """, unsafe_allow_html=True)
 
-# ========== Utils ==========
-def create_interactive_lightcurve(c):
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=c["time"], y=c["flux"], mode="lines", name="Flux",
-            line=dict(width=1.6),
-            hovertemplate="Time: %{x:.2f} d<br>Flux: %{y:.5f}<extra></extra>",
-        )
-    )
-    for i, t0 in enumerate(c["transit_times"]):
-        fig.add_vrect(
-            x0=t0 - 1, x1=t0 + 1, fillcolor="rgba(239,68,68,0.18)", layer="below", line_width=0,
-            annotation_text=f"T{i+1}", annotation_position="top left", annotation=dict(font_size=10),
-        )
-    fig.update_layout(
-        title=dict(text="Full Light Curve", font=dict(size=16)),
-        xaxis_title="Time (days)", yaxis_title="Normalized Flux",
-        height=480, hovermode="x unified",
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(255,255,255,0.02)",
-        margin=dict(l=40, r=20, t=50, b=40),
-    )
-    fig.update_xaxes(gridcolor="rgba(200,200,200,0.15)")
-    fig.update_yaxes(gridcolor="rgba(200,200,200,0.15)")
-    return fig
+apply_premium_theme()
 
+# ---- Page header ----
+st.markdown('<div class="mx">', unsafe_allow_html=True)
+st.markdown('<h1 class="main-title">About Our Models</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Lightweight, explainable machine learning for professional exoplanet vetting</p>', unsafe_allow_html=True)
 
-def create_transit_zoom(c, k=0, height=520):
-    if len(c["transit_times"]) == 0:
-        return go.Figure()
-    if k >= len(c["transit_times"]):
-        k = 0
-    t_center = c["transit_times"][k]
-    mask = (c["time"] > t_center - 2) & (c["time"] < t_center + 2)
-    fig = go.Figure()
-    fig.add_trace(
-        go.Scatter(
-            x=c["time"][mask], y=c["flux"][mask], mode="markers+lines",
-            marker=dict(size=4), line=dict(width=2),
-            hovertemplate="Time: %{x:.3f} d<br>Flux: %{y:.6f}<extra></extra>",
-        )
-    )
-    half = (c["duration"] / 2.0) / 24.0
-    fig.add_vrect(
-        x0=t_center - half, x1=t_center + half,
-        fillcolor="rgba(16,185,129,0.18)", layer="below", line_width=0,
-        annotation_text="Estimated Duration Window", annotation_position="top",
-        annotation=dict(font_size=10),
-    )
-    fig.update_layout(
-        title=dict(text=f"Transit {k+1} — High-Resolution", font=dict(size=14)),
-        xaxis_title="Time (days)", yaxis_title="Normalized Flux",
-        height=height, hovermode="x unified",
-        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(255,255,255,0.02)",
-        margin=dict(l=40, r=20, t=40, b=36),
-    )
-    fig.update_xaxes(gridcolor="rgba(200,200,200,0.15)")
-    fig.update_yaxes(gridcolor="rgba(200,200,200,0.15)")
-    return fig
-
-
-def confidence_bar(conf):
-    return f"""
-    <div class="card conf-wrap">
-      <div style='display:flex;justify-content:space-between;align-items:end;margin-bottom:.6rem;'>
-        <div style="margin:0; color:var(--text-1);">AI Confidence Score</div>
-        <div style='color:#bcd2ff; font-size:1.05rem; font-weight:700;'>{conf:.1%}</div>
-      </div>
-      <div class='conf-bar'><div class='conf-ind' style='width:{conf*100:.2f}%;'></div></div>
-      <div style='display:flex;justify-content:space-between;margin-top:.35rem;font-size:.8rem;' class='muted'>
-        <span>Low</span><span>Medium</span><span>High</span>
-      </div>
-    </div>
-    """
-
-
-def metric_html(title, value):
-    return f"<div class='metric'><div class='m-title'>{title}</div><div class='m-val'>{value}</div></div>"
-
-# ========== Main ==========
-def render_vetting():
-    candidates = st.session_state.candidates
-    idx = st.session_state.candidate_index
-    total = len(candidates)
-    pct = int(((idx + 1) / total) * 100) if total else 0
-
-    st.markdown(
-        f"""
-        <div id="top-progress">
-          <div class="wrap">
-            <div class="label">Candidate {idx+1} / {total} — {pct}%</div>
-            <div class="bar"><i style="width:{pct}%;"></i></div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Sidebar
-    with st.sidebar:
-        st.markdown("#### Stellar Parameters")
-        if idx < total:
-            cur = candidates[idx]
-            st.markdown(
-                f"""
-                <div class='card'>
-                  <div style='display:flex;justify-content:space-between;align-items:center;'>
-                    <h4 style='margin:0;color:#bcd2ff;'>{cur['id']}</h4>
-                    <span class='muted' style='font-size:.85rem;'>SNR {cur['snr']:.1f}</span>
-                  </div>
-                  <div style='height:10px;'></div>
-                  <div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;'>
-                    {metric_html("B−V (mag)", f"{cur['color_index']:.3f}")}
-                    {metric_html("T_eff (K)", f"{cur['effective_temp']:.0f}")}
-                    {metric_html("SNR", f"{cur['snr']:.1f}")}
-                    {metric_html("Rp/R★", f"{cur['radius_ratio']:.3f}")}
-                  </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-    if idx >= total:
-        st.markdown("<h1 style='text-align:center;margin-top:14vh;'>Vetting Complete</h1>", unsafe_allow_html=True)
-        return
-
-    cur = candidates[idx]
-    st.progress((idx + 1) / total, text=f"Candidate {idx+1} of {total}")
-
-    st.markdown(
-        f"""
-        <div class='card' style='padding:12px 16px; margin-top:8px;'>
-          <div style='display:flex;justify-content:space-between;align-items:center; gap:12px;'>
-            <div>
-              <div style='color:var(--text-1);margin:0;'>Target</div>
-              <div style='font-weight:700; font-size:1.15rem; color:#bcd2ff;'>{cur['id']}</div>
-            </div>
-            <div style='display:flex; gap:12px;'>
-              {metric_html("Period", f"{cur['period']:.2f} d")}
-              {metric_html("Depth", f"{cur['depth']:.2f} %")}
-              {metric_html("Duration", f"{cur['duration']:.2f} hr")}
-              {metric_html("Rp/R★", f"{cur['radius_ratio']:.3f}")}
-            </div>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(confidence_bar(cur["ai_confidence"]), unsafe_allow_html=True)
-
-    st.subheader("Full Light Curve")
-    fig_full = create_interactive_lightcurve(cur)
-    st.plotly_chart(fig_full, use_container_width=True, config={"displayModeBar": True, "displaylogo": False})
-
-    # === Transit Detail ===
-    st.subheader("Transit Detail")
-    with st.container():
-        head_l, head_r = st.columns([6, 2])
-        with head_l:
-            st.caption("Select a transit window to inspect the high-resolution view.")
-        with head_r:
-            transit_num = st.selectbox(
-                "Transit Window",
-                range(max(1, len(cur["transit_times"]))),
-                index=0,
-                format_func=lambda x: f"Transit {x+1}",
-                key=f"transit_select_{idx}",
-                label_visibility="visible",
-            )
-
-        fig_zoom = create_transit_zoom(cur, transit_num, height=520)
-        st.plotly_chart(fig_zoom, use_container_width=True, config={"displayModeBar": False})
-
-    # === Decision ===
-    st.subheader("Vetting Decision")
-    decision = st.radio(
-        "Select a label",
-        options=["False Positive", "Planet Candidate", "Confirmed Planet"],
-        horizontal=True,
-        key=f"decision_{idx}",
-    )
-
-    col_submit, col_prev, col_skip, col_reset = st.columns([2, 1, 1, 1])
-    with col_submit:
-        if st.button("Submit Decision", use_container_width=True):
-            mapping = {
-                "False Positive": "FALSE_POSITIVE",
-                "Planet Candidate": "CANDIDATE",
-                "Confirmed Planet": "CONFIRMED",
-            }
-            st.session_state.labels.append(mapping[decision])
-            st.session_state.candidate_index += 1
-            st.toast(f"Recorded: {decision}")
-            time.sleep(0.1)
-            st.rerun()
-    with col_prev:
-        if st.button("Previous", use_container_width=True, disabled=(idx == 0)):
-            st.session_state.candidate_index = max(0, idx - 1)
-            if st.session_state.labels:
-                st.session_state.labels.pop()
-            st.rerun()
-    with col_skip:
-        if st.button("Skip", use_container_width=True):
-            st.session_state.candidate_index += 1
-            st.rerun()
-    with col_reset:
-        if st.button("Reset Demo Data", use_container_width=True):
-            st.session_state.clear()
-            st.rerun()
-
-# ========== Run ==========
-render_vetting()
-
-st.markdown(
-    """
-<div style='text-align:center;color:var(--text-2);padding:18px 0;'>
-  <div style='font-size:.9rem;opacity:.7;'>Exoplanet Hunter — Vetting Suite</div>
-  <div style='font-size:.8rem;opacity:.5;'>Build v2.3.1 · Enterprise Edition</div>
+# ---- Papers section ----
+st.markdown("### Papers We Build Upon")
+st.markdown("""
+<div class="analysis-card">
+  <h4>Exoplanet Detection Using Machine Learning</h4>
+  <p class="muted">
+    Classical transit searches (e.g., BLS) degrade under low S/N and heavy systematics.
+    Deep learning can recover sensitivity but often at higher compute cost and lower interpretability.
+    This line of work motivates a lightweight ML stack that maintains performance while improving
+    efficiency and explainability.
+  </p>
+  <h5>Method</h5>
+  <ul class="tight">
+    <li><b>Pre-processing</b> — Clean light curves: remove systematics, impute gaps, de-trend.</li>
+    <li><b>Feature extraction</b> — ~789 descriptors via <code>tsfresh</code> (variance, energy, peaks, etc.).</li>
+    <li><b>Classifier</b> — Gradient-boosted trees (e.g., <b>LightGBM</b>).</li>
+    <li><b>Data</b> — Train/validate on <b>Kepler</b>; generalize on <b>TESS</b>; stress-test with simulated K2.</li>
+  </ul>
+  <h5>Reported Results</h5>
+  <div>
+    <span class="kpi">Kepler AUC ≈ 0.948</span>
+    <span class="kpi">Kepler Recall ≈ 96%</span>
+    <span class="kpi">TESS Accuracy ≈ 98%</span>
+    <span class="kpi">TESS Recall ≈ 82%</span>
+    <span class="kpi">TESS Precision ≈ 63%</span>
+  </div>
+  <div class="divider"></div>
+  <h5>Pros</h5>
+  <ul class="tight">
+    <li>CPU-friendly, minutes to retrain; interpretable feature importance; mission-agnostic.</li>
+  </ul>
+  <h5>Cons</h5>
+  <ul class="tight">
+    <li>Below best deep nets at extreme low S/N; lower precision on imbalanced TESS; trees not fully transparent.</li>
+  </ul>
 </div>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="analysis-card">
+  <h4>Assessment of Ensemble-Based ML Algorithms for Exoplanet Identification</h4>
+  <p class="muted">
+    Ensemble strategies (bagging, boosting, stacking) improve robustness in noisy regimes and
+    reduce false positives compared with single learners or pure BLS-style pipelines.
+  </p>
+  <h5>Method</h5>
+  <ul class="tight">
+    <li><b>Data</b> — Kepler light curves, de-trended & normalized, with positive/negative labels.</li>
+    <li><b>Features</b> — Time-series statistics capturing amplitude, period, depth, symmetry, energy.</li>
+    <li><b>Models</b> — Single learners (RF/GBM/XGBoost/SVM/DT) vs. <b>ensembles</b> (Voting/Bagging/Boosting/<b>Stacking</b>).</li>
+  </ul>
+  <h5>Reported Results</h5>
+  <div>
+    <span class="kpi">Accuracy (single): 95–97%</span>
+    <span class="kpi">Accuracy (stacking): ~98.5%</span>
+    <span class="kpi">Recall (ensemble): &gt; 90%</span>
+    <span class="kpi">Precision (ensemble): 85–88%</span>
+    <span class="kpi">F1 (ensemble): ~0.91–0.93</span>
+    <span class="kpi">ROC–AUC (ensemble): ~0.97–0.98</span>
+  </div>
+  <div class="divider"></div>
+  <h5>Key Findings</h5>
+  <ul class="tight">
+    <li>Stacking consistently outperforms single models in low S/N scenarios; period/depth/symmetry dominate importance.</li>
+  </ul>
+  <h5>Limitations</h5>
+  <ul class="tight">
+    <li>Higher training cost than single learners; class imbalance still challenging in edge cases.</li>
+  </ul>
+</div>
+""", unsafe_allow_html=True)
+
+# ---- Comparative table ----
+st.markdown("### Comparative Summary")
+st.markdown("""
+<div class="analysis-card">
+<table>
+  <thead>
+    <tr>
+      <th>Aspect</th>
+      <th>“Exoplanet Detection using ML”</th>
+      <th>“Ensemble-Based ML for Identification”</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Data</td>
+      <td>Kepler (train/val), TESS (generalization), simulated K2</td>
+      <td>Kepler mission light curves</td>
+    </tr>
+    <tr>
+      <td>Core Method</td>
+      <td>~789 <code>tsfresh</code> features; classifier: <b>LightGBM</b></td>
+      <td>Multiple single models vs. <b>ensembles</b> (Voting/Bagging/Boosting/<b>Stacking</b>)</td>
+    </tr>
+    <tr>
+      <td>Compute</td>
+      <td>Lightweight; CPU minutes; no GPU required</td>
+      <td>Higher than single learners; still lighter than deep nets</td>
+    </tr>
+    <tr>
+      <td>Kepler Results</td>
+      <td>AUC ≈ 0.948; Recall ≈ 96%</td>
+      <td>Accuracy ≈ 98.5%; Recall &gt; 90%; Precision ≈ 85–88%; F1 ≈ 0.91–0.93; ROC–AUC ≈ 0.97–0.98</td>
+    </tr>
+    <tr>
+      <td>Strengths</td>
+      <td>Fast training; interpretable; mission-agnostic</td>
+      <td>Higher accuracy; better precision/recall tradeoff; robust generalization</td>
+    </tr>
+    <tr>
+      <td>Limitations</td>
+      <td>Lower precision on imbalanced TESS; residual opacity</td>
+      <td>More training time; imbalance sensitivity remains</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+""", unsafe_allow_html=True)
+
+# ---- Our approach ----
+st.markdown("### Our Approach: Pragmatic, Explainable Ensemble Pipeline")
+st.markdown("""
+<div class="analysis-card">
+  <ol class="tight">
+    <li><b>Feature extraction</b> — Compute hundreds of descriptors via <code>tsfresh</code>/<code>sktime</code>; augment with BLS/TLS period, depth, duration.</li>
+    <li><b>Base learners</b> — LightGBM/XGBoost/CatBoost + Random Forest/ExtraTrees + a linear baseline (LogReg or SVM).</li>
+    <li><b>Ensembling</b> — Start with weighted voting; adopt <b>stacking</b> using Logistic Regression/LightGBM on out-of-fold probabilities.</li>
+    <li><b>Evaluation</b> — K-fold CV with ROC–AUC, PR–AUC, F1, and <i>Recall @ 1% FPR</i> benchmarked vs. BLS/TLS.</li>
+  </ol>
+  <p class="muted" style="margin:.4rem 0 0 0;">This blend keeps training cycles CPU-friendly, exposes feature importance for QA,
+  and gains robustness from multiple learners—ideal for production vetting with human-in-the-loop review.</p>
+</div>
+""", unsafe_allow_html=True)
+
+# ---- Advantages & Caveats ----
+c1, c2 = st.columns(2)
+with c1:
+    st.markdown("#### Advantages")
+    st.markdown("""
+- **Fast iteration** — Minutes to retrain on CPUs; easy CI/CD.
+- **Explainability** — Global/per-sample importances support scientific QA.
+- **Generalization** — Works across missions with consistent pre-processing.
+- **Operational fit** — Rank-ordered candidates and uncertainty flags integrate with expert vetting.
+""")
+with c2:
+    st.markdown("#### Caveats")
+    st.markdown("""
+- **Extreme low S/N** — Deep nets may still edge out ensembles.
+- **Class imbalance** — Use `class_weight=balanced` / `scale_pos_weight`, calibrated thresholds, and PR–AUC tracking.
+- **Residual opacity** — Tree ensembles remain partly black-box despite feature importance.
+""")
+
+# ---- Roadmap ----
+st.markdown("### Roadmap")
+st.markdown("""
+<div class="analysis-card">
+  <ul class="tight">
+    <li><b>Unified multi-mission model</b> with domain adaptation to reduce calibration drift across Kepler/K2/TESS.</li>
+    <li><b>Imbalance remedies</b> — augmentation, semi-supervised PU learning, calibrated thresholds per target class.</li>
+    <li><b>Unsupervised discovery</b> — autoencoders/clustering to surface novel transit-like anomalies.</li>
+    <li><b>Application to unconfirmed candidates</b> to accelerate triage and expert review.</li>
+  </ul>
+</div>
+""", unsafe_allow_html=True)
+
+# ---- Footer ----
+st.markdown("""
+<div class='mx' style='text-align:center; color:#ffffff; padding: 1.6rem 0; border-top: 1px solid rgba(102,126,234,.35); margin-top:.6rem;'>
+  <div style='font-size:.95rem; opacity:.9;'>ExoMatch · Professional Exoplanet Vetting Models</div>
+  <div style='font-size:.85rem; opacity:.65; margin-top:.35rem;'>Design language aligned with Analysis/Vetting pages · Build 2025</div>
+</div>
+""", unsafe_allow_html=True)
