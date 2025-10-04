@@ -1,0 +1,7 @@
+{
+  "dataset_name": "Kepler Objects of Interest (KOI)",
+  "description": "Kepler \u671b\u9060\u93e1\u767c\u73fe\u7684\u7cfb\u5916\u884c\u661f\u5019\u9078",
+  "download_date": "2025-10-04T20:26:51.340214",
+  "filepath": "data\\kepler_koi.csv",
+  "source": "NASA Exoplanet Archive"
+}

@@ -1,0 +1,7 @@
+{
+  "dataset_name": "TESS Objects of Interest (TOI)",
+  "description": "TESS \u671b\u9060\u93e1\u767c\u73fe\u7684\u7cfb\u5916\u884c\u661f\u5019\u9078",
+  "download_date": "2025-10-04T20:26:19.998804",
+  "filepath": "data\\tess_toi.csv",
+  "source": "NASA Exoplanet Archive"
+}

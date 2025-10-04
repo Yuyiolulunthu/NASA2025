@@ -18,10 +18,33 @@ class ExoplanetPredictor:
         
         model_data = joblib.load(model_path)
         
-        self.model = model_data['model']
+        # 處理不同的模型格式
+        if 'model' in model_data:
+            # 標準格式：單一模型
+            self.model = model_data['model']
+        elif 'target_model' in model_data:
+            # Transfer learning 格式：使用目標模型
+            self.model = model_data['target_model']
+            if self.model is None:
+                print("⚠️  目標模型為空，使用源模型")
+                self.model = model_data['source_model']
+        elif 'source_model' in model_data:
+            # Transfer learning 格式：只有源模型
+            self.model = model_data['source_model']
+        else:
+            raise ValueError("無法識別的模型格式")
+        
         self.scaler = model_data['scaler']
         self.label_encoder = model_data['label_encoder']
-        self.selected_features = model_data['selected_features']
+        
+        # 特徵列表可能有不同的鍵名
+        if 'selected_features' in model_data:
+            self.selected_features = model_data['selected_features']
+        elif 'feature_cols' in model_data:
+            self.selected_features = model_data['feature_cols']
+        else:
+            raise ValueError("找不到特徵列表")
+        
         self.version = model_data.get('version', 'unknown')
         self.data_source = model_data.get('data_source', 'unknown')
         
@@ -32,10 +55,11 @@ class ExoplanetPredictor:
         print(f"  類別: {list(self.label_encoder.classes_)}")
     
     def prepare_features(self, df):
-        """準備特徵 - 與訓練時相同的流程"""
+        """準備特徵 - 支援 TESS 和 Kepler 資料集"""
         
-        # TESS 欄位對應
+        # TESS 和 Kepler 欄位對應
         feature_mapping = {
+            # TESS 欄位
             'Period (days)': 'period',
             'Duration (hours)': 'duration',
             'Depth (ppm)': 'depth',
@@ -48,11 +72,33 @@ class ExoplanetPredictor:
             'Stellar log(g) (cm/s^2)': 'stellar_logg',
             'Stellar Mass (M_Sun)': 'stellar_mass',
             'TESS Mag': 'tess_mag',
-            'Stellar Distance (pc)': 'distance'
+            'Stellar Distance (pc)': 'distance',
+            # Kepler 欄位
+            'koi_period': 'period',
+            'koi_duration': 'duration',
+            'koi_depth': 'depth',
+            'koi_prad': 'planet_radius',
+            'koi_teq': 'equil_temp',
+            'koi_insol': 'insolation',
+            'koi_model_snr': 'snr',
+            'koi_steff': 'stellar_temp',
+            'koi_srad': 'stellar_radius',
+            'koi_slogg': 'stellar_logg',
+            'koi_smass': 'stellar_mass',
+            'koi_kepmag': 'tess_mag',  # 映射到相同特徵名
+            'koi_dist': 'distance'
         }
         
         # 建立特徵矩陣
-        available_features = {k: v for k, v in feature_mapping.items() if k in df.columns}
+        available_features = {}
+        for orig_name, new_name in feature_mapping.items():
+            if orig_name in df.columns:
+                if new_name not in available_features:  # 避免重複
+                    available_features[orig_name] = new_name
+        
+        if not available_features:
+            raise ValueError("找不到任何可用的特徵欄位")
+        
         X = df[list(available_features.keys())].copy()
         X.columns = list(available_features.values())
         
@@ -81,7 +127,12 @@ class ExoplanetPredictor:
         X = X.replace([np.inf, -np.inf], np.nan)
         X = X.fillna(X.median())
         
-        # 只選擇模型需要的特徵
+        # 補齊模型需要但缺失的特徵
+        for feat in self.selected_features:
+            if feat not in X.columns:
+                X[feat] = 0  # 缺失特徵用0填充
+        
+        # 只選擇模型需要的特徵，並保持順序
         X_selected = X[self.selected_features]
         
         return X_selected
@@ -284,18 +335,45 @@ def main():
     ╚═══════════════════════════════════════════════════════╝
     """)
     
-    # 尋找最新的模型
+    # 尋找所有模型
     model_dir = Path("models")
-    model_files = list(model_dir.glob("exoplanet_model_*.pkl"))
+    model_files = list(model_dir.glob("*.pkl"))
+    
+    # 過濾掉非模型檔案
+    model_keywords = ['exoplanet', 'combined', 'transfer', 'lgbm', 'xgb', 'stacking', 
+                      'catboost', 'random_forest', 'model', 'new_model']
+    model_files = [f for f in model_files if any(keyword in f.name.lower() for keyword in model_keywords)]
     
     if not model_files:
         print("❌ 找不到訓練好的模型！")
-        print("請先執行: python train_with_tess_data.py")
+        print("請先執行訓練腳本:")
+        print("  - python train_with_tess_data.py")
+        print("  - python train_custom_model.py")
+        print("  - python train_combined_model.py")
         return
     
     # 使用最新的模型
     latest_model = max(model_files, key=lambda p: p.stat().st_mtime)
-    print(f"📦 使用模型: {latest_model}")
+    
+    # 顯示所有可用模型
+    if len(model_files) > 1:
+        print("\n可用的模型:")
+        for i, model_file in enumerate(sorted(model_files, key=lambda p: p.stat().st_mtime, reverse=True), 1):
+            print(f"  {i}. {model_file.name}")
+        
+        print(f"\n預設使用最新模型: {latest_model.name}")
+        use_default = input("使用預設模型? (y/n, 預設=y): ").strip().lower()
+        
+        if use_default == 'n':
+            choice = input(f"選擇模型 (1-{len(model_files)}): ").strip()
+            try:
+                idx = int(choice) - 1
+                sorted_models = sorted(model_files, key=lambda p: p.stat().st_mtime, reverse=True)
+                latest_model = sorted_models[idx]
+            except:
+                print("無效選擇，使用預設模型")
+    
+    print(f"\n📦 使用模型: {latest_model}")
     
     print("\n請選擇測試模式:")
     print("1. 批次測試（測試整個 CSV 檔案）")
