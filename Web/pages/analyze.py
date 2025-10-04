@@ -440,8 +440,10 @@ with st.sidebar:
     st.markdown("### 📊 Data Requirements")
     st.info("""
     **Required Columns:**
-    - `time` (temporal data)
-    - `flux` (measurement values)
+    - Time column (time, t, BJD, MJD, etc.)
+    - Flux column (flux, f, brightness, etc.)
+    
+    *The system will auto-detect column names or let you select them manually.*
     
     **Recommended:**
     - 100+ data points
@@ -474,7 +476,7 @@ with col2:
     uploaded_file = st.file_uploader(
         "📁 Upload Light Curve Data (CSV)",
         type=['csv'],
-        help="CSV file with 'time' and 'flux' columns"
+        help="CSV file with time and flux data (column names will be auto-detected)"
     )
 
 if uploaded_file is not None:
@@ -484,21 +486,54 @@ if uploaded_file is not None:
             df = pd.read_csv(uploaded_file)
             time.sleep(0.3)
         
+        # Show available columns
+        st.info(f"📋 **Detected columns:** {', '.join(df.columns.tolist())}")
+        
+        # Try to find time and flux columns (case-insensitive)
+        time_col = None
+        flux_col = None
+        
+        for col in df.columns:
+            col_lower = col.lower().strip()
+            if col_lower in ['time', 'times', 't', 'bjd', 'jd', 'mjd', 'timestamp']:
+                time_col = col
+            if col_lower in ['flux', 'fluxes', 'f', 'brightness', 'magnitude', 'mag', 'intensity']:
+                flux_col = col
+        
+        # If not found automatically, let user select
+        if time_col is None or flux_col is None:
+            st.warning("⚠️ Could not automatically detect 'time' and 'flux' columns. Please select them manually:")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                time_col = st.selectbox("Select TIME column:", df.columns.tolist(), 
+                                       index=0 if len(df.columns) > 0 else None)
+            with col2:
+                flux_col = st.selectbox("Select FLUX column:", df.columns.tolist(),
+                                       index=1 if len(df.columns) > 1 else None)
+        else:
+            st.success(f"✅ Auto-detected: Time='{time_col}', Flux='{flux_col}'")
+        
+        # Rename columns to standard names
+        df_processed = df.copy()
+        df_processed['time'] = df[time_col]
+        df_processed['flux'] = df[flux_col]
+        
         # Data Validation
-        if 'time' not in df.columns or 'flux' not in df.columns:
-            st.error("❌ Error: CSV file must contain 'time' and 'flux' columns")
+        if time_col is None or flux_col is None:
+            st.error("❌ Error: Please select both time and flux columns")
         else:
             # Success Message
-            st.success(f"✅ Light curve loaded successfully! {len(df):,} data points")
+            st.success(f"✅ Light curve loaded successfully! {len(df_processed):,} data points")
             
             # Data Preview
             with st.expander("📋 Data Preview", expanded=False):
                 col1, col2, col3 = st.columns(3)
-                col1.metric("Data Points", f"{len(df):,}")
-                col2.metric("Time Span", f"{df['time'].max() - df['time'].min():.2f}")
-                col3.metric("Flux Range", f"{df['flux'].max() - df['flux'].min():.6f}")
+                col1.metric("Data Points", f"{len(df_processed):,}")
+                col2.metric("Time Span", f"{df_processed['time'].max() - df_processed['time'].min():.2f}")
+                col3.metric("Flux Range", f"{df_processed['flux'].max() - df_processed['flux'].min():.6f}")
                 
-                st.dataframe(df.head(10), use_container_width=True)
+                st.dataframe(df_processed[['time', 'flux']].head(10), use_container_width=True)
             
             # Analysis Button
             st.markdown("<br>", unsafe_allow_html=True)
@@ -517,9 +552,9 @@ if uploaded_file is not None:
                 time.sleep(0.4)
                 
                 # Step 2: Feature Extraction
-                status_text.text("🧠 Step 2/5: Extracting 20 features...")
+                status_text.text("🧠 Step 2/5: Extracting features...")
                 progress_bar.progress(40)
-                features = extract_features(df)
+                features = extract_features(df_processed)
                 time.sleep(0.4)
                 
                 # Step 3: Load Model
@@ -640,7 +675,7 @@ if uploaded_file is not None:
                 if show_visualization:
                     st.markdown("<br>", unsafe_allow_html=True)
                     st.markdown("### 📉 Light Curve Analysis")
-                    fig = create_visualization_plot(df, features)
+                    fig = create_visualization_plot(df_processed, features)
                     st.plotly_chart(fig, use_container_width=True)
                 
                 # AI Insights
@@ -668,7 +703,7 @@ if uploaded_file is not None:
                 st.markdown("**Data Quality Indicators:**")
                 st.markdown(f"- Signal-to-Noise: {features['mean_flux'] / features['std_flux']:.2f}")
                 st.markdown(f"- Variability: {features['cv_flux']:.4f}")
-                st.markdown(f"- Data Points: {len(df):,}")
+                st.markdown(f"- Data Points: {len(df_processed):,}")
                 
                 # Download Report
                 st.markdown("<br>", unsafe_allow_html=True)
@@ -699,8 +734,8 @@ else:
         st.markdown("""
         <div style='text-align: center; padding: 3rem; background: rgba(22, 33, 62, 0.5); border-radius: 20px; border: 2px dashed rgba(102, 126, 234, 0.3);'>
             <h2 style='color: #667eea; margin-bottom: 1rem;'>🪐 Upload Light Curve Data</h2>
-            <p style='color: #a0aec0; font-size: 1.1rem;'>CSV format with time and flux columns required</p>
-            <p style='color: #718096; font-size: 0.9rem; margin-top: 1rem;'>The AI will analyze the data using 20 extracted features<br>to detect potential exoplanet transit signatures</p>
+            <p style='color: #a0aec0; font-size: 1.1rem;'>CSV format with time and flux data</p>
+            <p style='color: #718096; font-size: 0.9rem; margin-top: 1rem;'>Column names will be auto-detected<br>Support: TIME, FLUX, BJD, MJD, and common variations</p>
         </div>
         """, unsafe_allow_html=True)
 
