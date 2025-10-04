@@ -155,6 +155,29 @@ def render_vetting():
     candidates = st.session_state.candidates
     idx = st.session_state.candidate_index
 
+    # Fixed top progress bar (will stay at top when scrolling)
+    total = len(candidates) if candidates else 0
+    top_progress = (idx + 1) / total if total > 0 else 0
+    pct = int(top_progress * 100)
+    st.markdown(f"""
+    <style>
+      /* reserve space so app content isn't hidden under the fixed bar */
+      body > .main, div.block-container, main[role="main"] {{ padding-top: 72px !important; }}
+      #top-progress {{ position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 9999; pointer-events: none; }}
+      #top-progress .wrap {{ height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 18px;
+                           background: rgba(10,14,39,0.70); backdrop-filter: blur(6px); box-shadow: 0 6px 20px rgba(2,6,23,0.6); }}
+      #top-progress .label {{ color: #e6f7ff; font-weight: 700; pointer-events: auto; min-width:160px; white-space:nowrap; }}
+      #top-progress .bar {{ flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }}
+      #top-progress .bar > i {{ display: block; height: 100%; width: {pct}%; background: linear-gradient(90deg,#4facfe,#667eea); border-radius: 999px; transition: width 400ms ease; }}
+    </style>
+    <div id="top-progress">
+      <div class="wrap">
+        <div class="label">Candidate {idx+1} / {total} — {pct}%</div>
+        <div class="bar"><i></i></div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
     # Sidebar — Stellar parameters & stats
     with st.sidebar:
         st.markdown("### 🌟 Stellar Parameters")
