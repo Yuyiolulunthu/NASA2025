@@ -9,7 +9,7 @@ import time
 import json
 import os
 
-st.set_page_config(page_title="Exoplanet Detection AI", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Exoplanet Detection AI", page_icon="Web/logo.png", layout="wide", initial_sidebar_state="expanded")
 render_banner()
 hide_streamlit_header_style = """
     <style>

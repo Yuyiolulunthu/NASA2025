@@ -11,7 +11,7 @@ except Exception:
 # ---------------- Page setup ----------------
 st.set_page_config(
     page_title="About Our Models — ExoMatch",
-    page_icon="🌌",
+    page_icon="Web/logo.png",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
