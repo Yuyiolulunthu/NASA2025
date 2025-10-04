@@ -1,16 +1,17 @@
 """
-🌌 Professional Exoplanet Vetting Platform — Vetting Only
-一執行就直接進入「Start Vetting」後的審核頁面（無首頁）。
-執行：
+Exoplanet Vetting Platform — Enterprise (No Emoji)
+Transit selector above the chart, and radio option text forced white.
+Run:
     streamlit run vetting_only.py
 """
 
-import streamlit as st
+import time
 import numpy as np
 import plotly.graph_objects as go
-import time
+import plotly.io as pio
+import streamlit as st
 
-# ================= Page Configuration =================
+# ========== Page Config ==========
 st.set_page_config(
     page_title="Exoplanet Hunter — Vetting",
     page_icon="🌌",
@@ -18,59 +19,87 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ================= Dark Space Theme CSS =================
+pio.templates.default = "plotly_dark"
+
+# ========== CSS ==========
 st.markdown(
     """
 <style>
-  .stApp { background: linear-gradient(135deg,#0a0e27 0%,#16213e 50%,#0f3460 100%); color:#e0e0e0; }
-  .stApp::before { content:""; position:fixed; inset:0; background-image:
-      radial-gradient(2px 2px at 20px 30px,#eee,rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 60px 70px,#fff,rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 50px 50px,#fff,rgba(0,0,0,0));
-      background-repeat:repeat; background-size:200px 200px; opacity:.4; z-index:-1;
-      animation: twinkle 3s ease-in-out infinite; }
-  @keyframes twinkle { 0%,100%{opacity:.3;} 50%{opacity:.6;} }
-  .candidate-card { background: linear-gradient(135deg, rgba(22,33,62,.95), rgba(15,52,96,.95));
-      border:2px solid rgba(102,126,234,.3); border-radius:20px; padding:2rem; margin:1.2rem 0;
-      box-shadow:0 8px 32px rgba(31,38,135,.37); backdrop-filter:blur(10px); }
-  .metric-card { background: rgba(22,33,62,.6); border:1px solid rgba(102,126,234,.3);
-      border-radius:15px; padding:1.2rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,.3); }
-  .confidence-bar { height:30px; border-radius:15px; background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981); position:relative; overflow:hidden; }
-  .confidence-indicator { position:absolute; top:0; left:0; height:100%; background:rgba(255,255,255,.3); border-right:3px solid #fff; box-shadow:0 0 20px rgba(255,255,255,.5); }
-  [data-testid="stSidebar"] { background: linear-gradient(180deg,#0a0e27 0%,#16213e 100%); }
+  :root{
+    --bg-0:#0b1020; --bg-1:#111833;
+    --panel:#121a36; --panel-2:#141c3b;
+    --text-0:#e8ecf3; --text-1:#c8d0e3; --text-2:#8b95af;
+    --brand:#4d7cff; --accent:#2bd4a7; --ring:#27376f; --border:#1f2c5b;
+  }
+  .stApp{ background: radial-gradient(1100px 900px at 10% 0%, var(--bg-1), var(--bg-0)); color:var(--text-0); }
+  [data-testid="stSidebar"]{ background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%); border-right:1px solid var(--ring); }
+
+  /* === Radio 整段文字改為白色（含未選取項） === */
+  [data-testid="stRadio"] * { color:#ffffff !important; }
+  /* 更精準：僅作用在文字，不動圓點本身樣式 */
+  [data-testid="stRadio"] div[role="radiogroup"] label > div:nth-child(2),
+  [data-testid="stRadio"] label span { color:#ffffff !important; font-weight:500; }
+
+  /* Top bar */
+  body > .main, div.block-container, main[role="main"]{ padding-top:76px !important; }
+  #top-progress{ position:fixed; top:0; left:0; right:0; height:68px; z-index:9999; pointer-events:none; }
+  #top-progress .wrap{
+    height:100%; display:flex; align-items:center; gap:16px; padding:0 20px;
+    background:rgba(10,16,32,.72); backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--ring); box-shadow:0 8px 24px rgba(0,0,0,.4);
+  }
+  #top-progress .label{ color:var(--text-0); font-weight:700; min-width:220px; letter-spacing:.2px; pointer-events:auto; }
+  #top-progress .bar{ flex:1; height:10px; background:rgba(255,255,255,.06); border-radius:999px; overflow:hidden; }
+  #top-progress .bar>i{ display:block; height:100%; background:linear-gradient(90deg, var(--brand), #7fa1ff); border-radius:999px; transition:width 380ms ease; }
+
+  /* Cards */
+  .card{ background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); border:1px solid var(--border);
+         border-radius:14px; padding:16px; box-shadow:0 6px 22px rgba(0,0,0,.30); }
+  .metric{ background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); border:1px solid var(--border);
+           border-radius:12px; padding:12px; }
+  .m-title{ color:var(--text-2); font-size:.85rem; margin:0 0 .2rem 0; }
+  .m-val{ color:#bcd2ff; font-size:1.2rem; font-weight:700; letter-spacing:.2px; }
+
+  /* Confidence bar */
+  .conf-wrap{ margin:8px 0 2px 0; }
+  .conf-bar{ height:26px; border-radius:999px; background:linear-gradient(90deg, #ef4444, #f59e0b, #10b981); position:relative; overflow:hidden; border:1px solid var(--ring);}
+  .conf-ind{ position:absolute; top:0; left:0; height:100%; background:rgba(255,255,255,.25); border-right:3px solid #fff; box-shadow:0 0 16px rgba(255,255,255,.35); }
+  .muted{ color:var(--text-2); }
+
+  /* Buttons */
+  .stButton>button{ border-radius:10px !important; border:1px solid var(--ring) !important; background:rgba(255,255,255,.05) !important; color:var(--text-0) !important; }
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-# ================= Session State Init =================
+# ========== Demo Data ==========
 if "candidate_index" not in st.session_state:
     st.session_state.candidate_index = 0
 if "candidates" not in st.session_state:
-    # Demo 候選資料；之後可改為讀檔或 API
     st.session_state.candidates = []
     rng = np.random.default_rng(7)
     for i in range(10):
-        time_data = np.linspace(0, 50, 500)
-        flux = 1 + rng.normal(0, 0.002, 500)
+        t = np.linspace(0, 50, 500)
+        f = 1 + rng.normal(0, 0.002, 500)
         period = rng.uniform(5, 30)
-        transit_times = []
-        for t in np.arange(0, 50, period):
-            mask = (time_data > t - 1) & (time_data < t + 1)
-            flux[mask] -= rng.uniform(0.005, 0.02)
-            transit_times.append(float(t))
+        events = []
+        for tt in np.arange(0, 50, period):
+            mask = (t > tt - 1) & (t < tt + 1)
+            f[mask] -= rng.uniform(0.005, 0.02)
+            events.append(float(tt))
         st.session_state.candidates.append(
             {
                 "id": f"TIC-{200000+i}",
-                "time": time_data,
-                "flux": flux,
+                "time": t,
+                "flux": f,
                 "period": float(period),
                 "depth": float(rng.uniform(0.5, 2.0)),
                 "duration": float(rng.uniform(2, 6)),
                 "snr": float(rng.uniform(10, 50)),
                 "radius_ratio": float(rng.uniform(0.05, 0.15)),
                 "ai_confidence": float(rng.uniform(0.5, 0.95)),
-                "transit_times": transit_times[:3],
+                "transit_times": events[:3],
                 "color_index": float(rng.uniform(0.5, 1.5)),
                 "effective_temp": float(rng.uniform(4000, 7000)),
             }
@@ -78,267 +107,225 @@ if "candidates" not in st.session_state:
 if "labels" not in st.session_state:
     st.session_state.labels = []
 
-# ================= Utils =================
-
-def create_interactive_lightcurve(candidate):
+# ========== Utils ==========
+def create_interactive_lightcurve(c):
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=candidate["time"], y=candidate["flux"], mode="lines", name="Flux",
-            line=dict(color="#4facfe", width=1.5),
-            hovertemplate="Time: %{x:.2f} days<br>Flux: %{y:.4f}<extra></extra>",
+            x=c["time"], y=c["flux"], mode="lines", name="Flux",
+            line=dict(width=1.6),
+            hovertemplate="Time: %{x:.2f} d<br>Flux: %{y:.5f}<extra></extra>",
         )
     )
-    for i, t in enumerate(candidate["transit_times"]):
+    for i, t0 in enumerate(c["transit_times"]):
         fig.add_vrect(
-            x0=t - 1, x1=t + 1, fillcolor="rgba(239,68,68,0.2)", layer="below", line_width=0,
-            annotation_text=f"Transit {i+1}", annotation_position="top left",
-            annotation=dict(font_size=10, font_color="#ef4444"),
+            x0=t0 - 1, x1=t0 + 1, fillcolor="rgba(239,68,68,0.18)", layer="below", line_width=0,
+            annotation_text=f"T{i+1}", annotation_position="top left", annotation=dict(font_size=10),
         )
     fig.update_layout(
-        title={"text": "Full Light Curve (Interactive - Zoom & Pan Enabled)", "font": {"size": 16, "color": "#667eea"}},
-        xaxis_title="Time (days)", yaxis_title="Normalized Flux", height=400,
-        paper_bgcolor="rgba(10,14,39,0.8)", plot_bgcolor="rgba(22,33,62,0.6)",
-        font=dict(color="#e0e0e0", size=12), hovermode="x unified",
-        xaxis=dict(gridcolor="rgba(102,126,234,0.2)", rangeslider=dict(visible=True, bgcolor="rgba(22,33,62,0.4)")),
-        yaxis=dict(gridcolor="rgba(102,126,234,0.2)"),
+        title=dict(text="Full Light Curve", font=dict(size=16)),
+        xaxis_title="Time (days)", yaxis_title="Normalized Flux",
+        height=480, hovermode="x unified",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(255,255,255,0.02)",
+        margin=dict(l=40, r=20, t=50, b=40),
     )
-    fig.update_xaxes(fixedrange=False)
-    fig.update_yaxes(fixedrange=False)
+    fig.update_xaxes(gridcolor="rgba(200,200,200,0.15)")
+    fig.update_yaxes(gridcolor="rgba(200,200,200,0.15)")
     return fig
 
 
-def create_transit_zoom(candidate, transit_index=0):
-    if transit_index >= len(candidate["transit_times"]):
-        transit_index = 0
-    t_center = candidate["transit_times"][transit_index]
-    mask = (candidate["time"] > t_center - 2) & (candidate["time"] < t_center + 2)
+def create_transit_zoom(c, k=0, height=520):
+    if len(c["transit_times"]) == 0:
+        return go.Figure()
+    if k >= len(c["transit_times"]):
+        k = 0
+    t_center = c["transit_times"][k]
+    mask = (c["time"] > t_center - 2) & (c["time"] < t_center + 2)
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=candidate["time"][mask], y=candidate["flux"][mask], mode="markers+lines", name="Transit Detail",
-            line=dict(color="#f093fb", width=2), marker=dict(size=4, color="#f093fb"),
-            hovertemplate="Time: %{x:.3f} days<br>Flux: %{y:.5f}<extra></extra>",
+            x=c["time"][mask], y=c["flux"][mask], mode="markers+lines",
+            marker=dict(size=4), line=dict(width=2),
+            hovertemplate="Time: %{x:.3f} d<br>Flux: %{y:.6f}<extra></extra>",
         )
     )
+    half = (c["duration"] / 2.0) / 24.0
     fig.add_vrect(
-        x0=t_center - candidate["duration"] / 48, x1=t_center + candidate["duration"] / 48,
-        fillcolor="rgba(16,185,129,0.15)", layer="below", line_width=0, annotation_text="Transit Duration", annotation_position="top",
+        x0=t_center - half, x1=t_center + half,
+        fillcolor="rgba(16,185,129,0.18)", layer="below", line_width=0,
+        annotation_text="Estimated Duration Window", annotation_position="top",
+        annotation=dict(font_size=10),
     )
     fig.update_layout(
-        title={"text": f"Transit {transit_index+1} - High Resolution View", "font": {"size": 14, "color": "#f093fb"}},
-        xaxis_title="Time (days)", yaxis_title="Normalized Flux", height=350,
-        paper_bgcolor="rgba(10,14,39,0.8)", plot_bgcolor="rgba(22,33,62,0.6)",
-        font=dict(color="#e0e0e0", size=11), hovermode="x unified",
-        xaxis=dict(gridcolor="rgba(102,126,234,0.2)"), yaxis=dict(gridcolor="rgba(102,126,234,0.2)"),
+        title=dict(text=f"Transit {k+1} — High-Resolution", font=dict(size=14)),
+        xaxis_title="Time (days)", yaxis_title="Normalized Flux",
+        height=height, hovermode="x unified",
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(255,255,255,0.02)",
+        margin=dict(l=40, r=20, t=40, b=36),
     )
+    fig.update_xaxes(gridcolor="rgba(200,200,200,0.15)")
+    fig.update_yaxes(gridcolor="rgba(200,200,200,0.15)")
     return fig
 
 
 def confidence_bar(conf):
     return f"""
-    <div style='margin: 1rem 0;'>
-      <div style='display:flex;justify-content:space-between;margin-bottom:.5rem;'>
-        <span style='color:#a0a0a0;font-size:.9rem;'>AI Confidence Score</span>
-        <span style='color:#667eea;font-size:1.2rem;font-weight:bold;'>{conf:.1%}</span>
+    <div class="card conf-wrap">
+      <div style='display:flex;justify-content:space-between;align-items:end;margin-bottom:.6rem;'>
+        <div style="margin:0; color:var(--text-1);">AI Confidence Score</div>
+        <div style='color:#bcd2ff; font-size:1.05rem; font-weight:700;'>{conf:.1%}</div>
       </div>
-      <div class='confidence-bar'><div class='confidence-indicator' style='width:{conf*100}%;'></div></div>
-      <div style='display:flex;justify-content:space-between;margin-top:.3rem;font-size:.8rem;color:#666;'>
+      <div class='conf-bar'><div class='conf-ind' style='width:{conf*100:.2f}%;'></div></div>
+      <div style='display:flex;justify-content:space-between;margin-top:.35rem;font-size:.8rem;' class='muted'>
         <span>Low</span><span>Medium</span><span>High</span>
       </div>
     </div>
     """
 
-# ================= Vetting Page (Only) =================
 
+def metric_html(title, value):
+    return f"<div class='metric'><div class='m-title'>{title}</div><div class='m-val'>{value}</div></div>"
+
+# ========== Main ==========
 def render_vetting():
     candidates = st.session_state.candidates
     idx = st.session_state.candidate_index
+    total = len(candidates)
+    pct = int(((idx + 1) / total) * 100) if total else 0
 
-    # Fixed top progress bar (will stay at top when scrolling)
-    total = len(candidates) if candidates else 0
-    top_progress = (idx + 1) / total if total > 0 else 0
-    pct = int(top_progress * 100)
-    st.markdown(f"""
-    <style>
-      /* reserve space so app content isn't hidden under the fixed bar */
-      body > .main, div.block-container, main[role="main"] {{ padding-top: 72px !important; }}
-      #top-progress {{ position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 9999; pointer-events: none; }}
-      #top-progress .wrap {{ height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 18px;
-                           background: rgba(10,14,39,0.70); backdrop-filter: blur(6px); box-shadow: 0 6px 20px rgba(2,6,23,0.6); }}
-      #top-progress .label {{ color: #e6f7ff; font-weight: 700; pointer-events: auto; min-width:160px; white-space:nowrap; }}
-      #top-progress .bar {{ flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }}
-      #top-progress .bar > i {{ display: block; height: 100%; width: {pct}%; background: linear-gradient(90deg,#4facfe,#667eea); border-radius: 999px; transition: width 400ms ease; }}
-    </style>
-    <div id="top-progress">
-      <div class="wrap">
-        <div class="label">Candidate {idx+1} / {total} — {pct}%</div>
-        <div class="bar"><i></i></div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Sidebar — Stellar parameters & stats
-    with st.sidebar:
-        st.markdown("### 🌟 Stellar Parameters")
-        if idx < len(candidates):
-            cur = candidates[idx]
-            st.markdown(
-                f"""
-                <div class='metric-card'>
-                  <h4 style='color:#667eea;margin-bottom:1rem;'>{cur['id']}</h4>
-                  <div style='text-align:left;padding:.5rem;'>
-                    <p><strong>Color Index (B−V):</strong><br>{cur['color_index']:.3f}</p>
-                    <p><strong>Effective Temp:</strong><br>{cur['effective_temp']:.0f} K</p>
-                    <p><strong>SNR:</strong><br>{cur['snr']:.1f}</p>
-                  </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            st.markdown("---")
-            st.markdown("### 📊 Quick Stats")
-            st.metric("Current Index", f"{idx+1} / {len(candidates)}")
-            st.metric("Your Labels", len(st.session_state.labels))
-        st.markdown("---")
-        st.markdown("### ℹ️ Instructions")
-        st.info(
-            """
-**Zoom & Pan**
-- Scroll to zoom
-- Click & drag to pan
-- Double-click to reset
-
-**Vetting**
-- Review light curve
-- Check transit depth
-- Examine periodicity
-- Make judgment
-            """,
-        )
-
-    # Main content
-    if idx >= len(candidates):
-        st.markdown("<h1 style='text-align:center;'>🎉 VETTING COMPLETE!</h1>", unsafe_allow_html=True)
-        st.markdown(
-            """
-            <div class='candidate-card' style='text-align:center;'>
-              <h2 style='color:#667eea;'>All candidates reviewed!</h2>
-              <p style='font-size:1.2rem;margin:1.2rem 0;'>Thank you for your contribution! You've helped make the AI smarter 🚀</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        return
-
-    cur = candidates[idx]
-
-    # Progress
-    progress = (idx + 1) / len(candidates)
-    st.progress(progress)
     st.markdown(
         f"""
-        <div style='text-align:center;margin:1rem 0;'>
-          <span style='color:#667eea;font-size:1.2rem;font-weight:bold;'>CANDIDATE {idx+1} / {len(candidates)}</span>
+        <div id="top-progress">
+          <div class="wrap">
+            <div class="label">Candidate {idx+1} / {total} — {pct}%</div>
+            <div class="bar"><i style="width:{pct}%;"></i></div>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # AI Confidence
-    st.markdown(confidence_bar(cur["ai_confidence"]), unsafe_allow_html=True)
-
-    # Light curve — full
-    st.markdown('<h3 style="margin:0;">📈 Interactive Light Curve Analysis</h3>', unsafe_allow_html=True)
-    fig_full = create_interactive_lightcurve(cur)
-    st.plotly_chart(fig_full, use_container_width=True, config={"displayModeBar": True, "displaylogo": False})
-
-    # Transit detail
-    st.markdown('<h3 style="margin:0;">🔍 Transit Detail View</h3>', unsafe_allow_html=True)
-    col_a, col_b = st.columns([3, 1])
-    with col_b:
-        transit_num = st.selectbox("Select Transit", range(len(cur["transit_times"])), format_func=lambda x: f"Transit {x+1}")
-    fig_zoom = create_transit_zoom(cur, transit_num)
-    st.plotly_chart(fig_zoom, use_container_width=True, config={"displayModeBar": False})
-
-    # Physical parameters
-    st.markdown('<h3 style="margin:0;">🔬 Physical Parameters</h3>', unsafe_allow_html=True)
-    c1, c2, c3, c4 = st.columns(4)
-    params = [
-        ("Orbital Period", f"{cur['period']:.2f} days", c1),
-        ("Transit Depth", f"{cur['depth']:.2f}%", c2),
-        ("Duration", f"{cur['duration']:.2f} hrs", c3),
-        ("Radius Ratio (Rp/R*)", f"{cur['radius_ratio']:.3f}", c4),
-    ]
-    for label, value, col in params:
-        with col:
+    # Sidebar
+    with st.sidebar:
+        st.markdown("#### Stellar Parameters")
+        if idx < total:
+            cur = candidates[idx]
             st.markdown(
                 f"""
-                <div class='metric-card'>
-                  <div style='color:#a0a0a0;font-size:.85rem;'>{label}</div>
-                  <div style='color:#667eea;font-size:1.3rem;font-weight:bold;margin-top:.5rem;'>{value}</div>
+                <div class='card'>
+                  <div style='display:flex;justify-content:space-between;align-items:center;'>
+                    <h4 style='margin:0;color:#bcd2ff;'>{cur['id']}</h4>
+                    <span class='muted' style='font-size:.85rem;'>SNR {cur['snr']:.1f}</span>
+                  </div>
+                  <div style='height:10px;'></div>
+                  <div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;'>
+                    {metric_html("B−V (mag)", f"{cur['color_index']:.3f}")}
+                    {metric_html("T_eff (K)", f"{cur['effective_temp']:.0f}")}
+                    {metric_html("SNR", f"{cur['snr']:.1f}")}
+                    {metric_html("Rp/R★", f"{cur['radius_ratio']:.3f}")}
+                  </div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    if idx >= total:
+        st.markdown("<h1 style='text-align:center;margin-top:14vh;'>Vetting Complete</h1>", unsafe_allow_html=True)
+        return
 
-    # Decisions
-    st.markdown('<h3 style="margin:0;">🎯 Your Vetting Decision</h3>', unsafe_allow_html=True)
-    d1, d2, d3 = st.columns(3)
-    with d1:
-        if st.button("👈 FALSE POSITIVE", use_container_width=True, key="fp"):
-            st.session_state.labels.append("FALSE_POSITIVE")
-            st.session_state.candidate_index += 1
-            st.success("✅ Marked as False Positive")
-            time.sleep(0.2)
-            st.rerun()
-    with d2:
-        if st.button("👉 PLANET CANDIDATE", use_container_width=True, key="candidate"):
-            st.session_state.labels.append("CANDIDATE")
-            st.session_state.candidate_index += 1
-            st.info("✅ Marked as Candidate")
-            time.sleep(0.2)
-            st.rerun()
-    with d3:
-        if st.button("👆 CONFIRMED PLANET", use_container_width=True, key="confirmed", type="primary"):
-            st.session_state.labels.append("CONFIRMED")
-            st.session_state.candidate_index += 1
-            st.balloons()
-            st.success("✅ Confirmed as Planet!")
-            time.sleep(0.2)
-            st.rerun()
+    cur = candidates[idx]
+    st.progress((idx + 1) / total, text=f"Candidate {idx+1} of {total}")
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class='card' style='padding:12px 16px; margin-top:8px;'>
+          <div style='display:flex;justify-content:space-between;align-items:center; gap:12px;'>
+            <div>
+              <div style='color:var(--text-1);margin:0;'>Target</div>
+              <div style='font-weight:700; font-size:1.15rem; color:#bcd2ff;'>{cur['id']}</div>
+            </div>
+            <div style='display:flex; gap:12px;'>
+              {metric_html("Period", f"{cur['period']:.2f} d")}
+              {metric_html("Depth", f"{cur['depth']:.2f} %")}
+              {metric_html("Duration", f"{cur['duration']:.2f} hr")}
+              {metric_html("Rp/R★", f"{cur['radius_ratio']:.3f}")}
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # Navigation
-    n1, n2, n3 = st.columns(3)
-    with n1:
-        if st.button("⬅️ Previous", use_container_width=True, disabled=(idx == 0)):
-            st.session_state.candidate_index -= 1
+    st.markdown(confidence_bar(cur["ai_confidence"]), unsafe_allow_html=True)
+
+    st.subheader("Full Light Curve")
+    fig_full = create_interactive_lightcurve(cur)
+    st.plotly_chart(fig_full, use_container_width=True, config={"displayModeBar": True, "displaylogo": False})
+
+    # === Transit Detail ===
+    st.subheader("Transit Detail")
+    with st.container():
+        head_l, head_r = st.columns([6, 2])
+        with head_l:
+            st.caption("Select a transit window to inspect the high-resolution view.")
+        with head_r:
+            transit_num = st.selectbox(
+                "Transit Window",
+                range(max(1, len(cur["transit_times"]))),
+                index=0,
+                format_func=lambda x: f"Transit {x+1}",
+                key=f"transit_select_{idx}",
+                label_visibility="visible",
+            )
+
+        fig_zoom = create_transit_zoom(cur, transit_num, height=520)
+        st.plotly_chart(fig_zoom, use_container_width=True, config={"displayModeBar": False})
+
+    # === Decision ===
+    st.subheader("Vetting Decision")
+    decision = st.radio(
+        "Select a label",
+        options=["False Positive", "Planet Candidate", "Confirmed Planet"],
+        horizontal=True,
+        key=f"decision_{idx}",
+    )
+
+    col_submit, col_prev, col_skip, col_reset = st.columns([2, 1, 1, 1])
+    with col_submit:
+        if st.button("Submit Decision", use_container_width=True):
+            mapping = {
+                "False Positive": "FALSE_POSITIVE",
+                "Planet Candidate": "CANDIDATE",
+                "Confirmed Planet": "CONFIRMED",
+            }
+            st.session_state.labels.append(mapping[decision])
+            st.session_state.candidate_index += 1
+            st.toast(f"Recorded: {decision}")
+            time.sleep(0.1)
+            st.rerun()
+    with col_prev:
+        if st.button("Previous", use_container_width=True, disabled=(idx == 0)):
+            st.session_state.candidate_index = max(0, idx - 1)
             if st.session_state.labels:
                 st.session_state.labels.pop()
             st.rerun()
-    with n2:
-        if st.button("⏭️ Skip", use_container_width=True):
+    with col_skip:
+        if st.button("Skip", use_container_width=True):
             st.session_state.candidate_index += 1
             st.rerun()
-    with n3:
-        if st.button("🧪 Reset Demo Data", use_container_width=True):
-            del st.session_state["candidates"]
-            del st.session_state["labels"]
-            st.session_state.candidate_index = 0
+    with col_reset:
+        if st.button("Reset Demo Data", use_container_width=True):
+            st.session_state.clear()
             st.rerun()
 
-# Render
+# ========== Run ==========
 render_vetting()
 
-# Footer
 st.markdown(
     """
-<div style='text-align:center;color:#667eea;padding:2rem;'>
-  <p style='font-size:.9rem;opacity:.6;'>🌌 EXOPLANET HUNTER v2.1 — Vetting Only</p>
+<div style='text-align:center;color:var(--text-2);padding:18px 0;'>
+  <div style='font-size:.9rem;opacity:.7;'>Exoplanet Hunter — Vetting Suite</div>
+  <div style='font-size:.8rem;opacity:.5;'>Build v2.3.1 · Enterprise Edition</div>
 </div>
 """,
     unsafe_allow_html=True,

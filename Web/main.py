@@ -5,7 +5,7 @@ import streamlit as st
 # ---------- Page Config ----------
 st.set_page_config(
     page_title="Exoplanet Hunter",
-    page_icon="🌌",
+    page_icon="Web/logo.png",
     layout="wide",
 )
 
