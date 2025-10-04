@@ -8,7 +8,7 @@ import time
 import json
 import os
 
-st.set_page_config(page_title="Exoplanet Detection AI", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Exoplanet Detection AI", page_icon="Web/logo.png",layout="wide", initial_sidebar_state="expanded")
 
 # Get the correct paths relative to the script location
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
