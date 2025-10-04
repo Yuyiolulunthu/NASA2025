@@ -40,27 +40,48 @@ def apply_premium_theme():
         
         .subtitle {
             text-align: center;
-            color: #a0aec0;
+            color: #d0d0d0;
             font-size: 1.1rem;
             margin-bottom: 2rem;
-            font-weight: 300;
+            font-weight: 400;
         }
         
         /* Card Styles */
         .analysis-card {
             background: linear-gradient(135deg, rgba(22, 33, 62, 0.95), rgba(15, 52, 96, 0.95));
-            border: 2px solid rgba(102, 126, 234, 0.3);
+            border: 2px solid rgba(102, 126, 234, 0.5);
             border-radius: 20px;
             padding: 2rem;
             margin: 1.5rem 0;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.5);
             backdrop-filter: blur(10px);
+        }
+        
+        .analysis-card h4 {
+            color: #ffffff !important;
+            font-weight: 700;
+        }
+        
+        /* Improve text contrast */
+        .stMarkdown, .stText {
+            color: #f0f0f0 !important;
+        }
+        
+        /* Metric improvements */
+        .stMetric label {
+            color: #e0e0e0 !important;
+            font-weight: 600 !important;
+        }
+        
+        .stMetric .metric-value {
+            color: #4facfe !important;
+            font-weight: 700 !important;
         }
         
         /* Metric Cards */
         .metric-card {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
-            border: 1px solid rgba(102, 126, 234, 0.3);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.25), rgba(118, 75, 162, 0.25));
+            border: 2px solid rgba(102, 126, 234, 0.5);
             border-radius: 15px;
             padding: 1.5rem;
             text-align: center;
@@ -69,49 +90,51 @@ def apply_premium_theme():
         
         .metric-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.3);
-            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.5);
+            border-color: rgba(102, 126, 234, 0.8);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.35), rgba(118, 75, 162, 0.35));
         }
         
         .metric-value {
             font-size: 2.5rem;
             font-weight: 700;
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: #4facfe;
+            text-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
             margin: 0.5rem 0;
         }
         
         .metric-label {
-            color: #a0aec0;
+            color: #e0e0e0;
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 600;
         }
         
         /* Prediction Badge */
         .prediction-badge {
             display: inline-block;
-            padding: 1rem 2rem;
+            padding: 1.5rem 2.5rem;
             border-radius: 25px;
-            font-weight: 700;
-            font-size: 1.5rem;
+            font-weight: 800;
+            font-size: 1.8rem;
             margin: 1rem 0;
             text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
         
         .planet-detected {
             background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-            color: white;
-            box-shadow: 0 8px 32px rgba(72, 187, 120, 0.4);
-            border: 2px solid #48bb78;
+            color: #ffffff;
+            box-shadow: 0 8px 32px rgba(72, 187, 120, 0.6);
+            border: 3px solid #68d391;
         }
         
         .not-planet {
-            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
-            color: white;
-            box-shadow: 0 8px 32px rgba(229, 62, 62, 0.4);
-            border: 2px solid #e53e3e;
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+            color: #ffffff;
+            box-shadow: 0 8px 32px rgba(245, 101, 101, 0.6);
+            border: 3px solid #feb2b2;
         }
         
         /* Button Styles */
@@ -136,6 +159,77 @@ def apply_premium_theme():
         /* Progress Bar */
         .stProgress > div > div > div > div {
             background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* Improve Streamlit native elements */
+        .stAlert {
+            background-color: rgba(22, 33, 62, 0.8) !important;
+            border: 1px solid rgba(102, 126, 234, 0.4) !important;
+            color: #f0f0f0 !important;
+        }
+        
+        .stSuccess {
+            background-color: rgba(72, 187, 120, 0.15) !important;
+            border: 2px solid #48bb78 !important;
+            color: #e0e0e0 !important;
+        }
+        
+        .stWarning {
+            background-color: rgba(237, 137, 54, 0.15) !important;
+            border: 2px solid #ed8936 !important;
+            color: #e0e0e0 !important;
+        }
+        
+        .stError {
+            background-color: rgba(245, 101, 101, 0.15) !important;
+            border: 2px solid #f56565 !important;
+            color: #e0e0e0 !important;
+        }
+        
+        .stInfo {
+            background-color: rgba(66, 153, 225, 0.15) !important;
+            border: 2px solid #4299e1 !important;
+            color: #e0e0e0 !important;
+        }
+        
+        /* Dataframe styling */
+        .dataframe {
+            color: #e0e0e0 !important;
+        }
+        
+        .dataframe thead th {
+            background-color: rgba(102, 126, 234, 0.3) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+        
+        .dataframe tbody td {
+            color: #e0e0e0 !important;
+        }
+        
+        /* Sidebar styling */
+        [data-testid="stSidebar"] {
+            background-color: rgba(10, 14, 39, 0.95) !important;
+        }
+        
+        [data-testid="stSidebar"] .stMarkdown {
+            color: #f0f0f0 !important;
+        }
+        
+        /* Selectbox and input styling */
+        .stSelectbox label, .stFileUploader label {
+            color: #e0e0e0 !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Code block styling */
+        .stCodeBlock {
+            background-color: rgba(15, 25, 50, 0.8) !important;
+            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+        }
+        
+        code {
+            color: #00f5ff !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -331,26 +425,27 @@ def create_visualization_plot(df, features):
         horizontal_spacing=0.1
     )
     
-    # 1. Time Series
+    # 1. Time Series - Brighter colors
     fig.add_trace(
         go.Scatter(x=df['time'], y=df['flux'], mode='lines', name='Light Curve',
-                   line=dict(color='#4facfe', width=1.5),
+                   line=dict(color='#00d4ff', width=2),
                    hovertemplate='Time: %{x:.4f}<br>Flux: %{y:.6f}<extra></extra>'),
         row=1, col=1
     )
     
-    # Add mean line
-    fig.add_hline(y=features['mean_flux'], line_dash="dash", line_color="orange", 
-                  annotation_text="Mean", row=1, col=1)
+    # Add mean line with better visibility
+    fig.add_hline(y=features['mean_flux'], line_dash="dash", line_color="#ffd700", 
+                  line_width=2, annotation_text="Mean", annotation_font_color="#ffffff",
+                  row=1, col=1)
     
-    # 2. Distribution Histogram
+    # 2. Distribution Histogram - Brighter colors
     fig.add_trace(
         go.Histogram(x=df['flux'], name='Distribution', nbinsx=50,
-                     marker=dict(color='#764ba2', opacity=0.7)),
+                     marker=dict(color='#a78bfa', opacity=0.8)),
         row=1, col=2
     )
     
-    # 3. Detrended Signal
+    # 3. Detrended Signal - Brighter colors
     from scipy import stats
     time_normalized = (df['time'] - df['time'].min()) / (df['time'].max() - df['time'].min())
     slope, intercept, _, _, _ = stats.linregress(time_normalized, df['flux'])
@@ -359,11 +454,11 @@ def create_visualization_plot(df, features):
     
     fig.add_trace(
         go.Scatter(x=df['time'], y=detrended, mode='lines', name='Detrended',
-                   line=dict(color='#f093fb', width=1.5)),
+                   line=dict(color='#ff6ec7', width=2)),
         row=2, col=1
     )
     
-    # 4. Top Features Bar Chart
+    # 4. Top Features Bar Chart - Brighter colors
     feature_names = ['Mean', 'Std', 'Range', 'CV', 'Skew', 'Trend']
     feature_values = [
         abs(features['mean_flux']), 
@@ -376,21 +471,30 @@ def create_visualization_plot(df, features):
     
     fig.add_trace(
         go.Bar(x=feature_names, y=feature_values, name='Features',
-               marker=dict(color='#00f2fe', opacity=0.7)),
+               marker=dict(color='#00f5ff', opacity=0.8)),
         row=2, col=2
     )
     
+    # Update layout with better contrast
     fig.update_layout(
         height=800,
         showlegend=True,
-        paper_bgcolor='rgba(10, 14, 39, 0.8)',
-        plot_bgcolor='rgba(22, 33, 62, 0.6)',
-        font=dict(color='#e0e0e0', size=11),
-        hovermode='closest'
+        paper_bgcolor='rgba(10, 14, 39, 0.9)',
+        plot_bgcolor='rgba(15, 25, 50, 0.8)',
+        font=dict(color='#f0f0f0', size=12, family='Arial'),
+        hovermode='closest',
+        title_font_color='#ffffff'
     )
     
-    fig.update_xaxes(gridcolor='rgba(102, 126, 234, 0.2)')
-    fig.update_yaxes(gridcolor='rgba(102, 126, 234, 0.2)')
+    # Update axes with better visibility
+    fig.update_xaxes(gridcolor='rgba(102, 126, 234, 0.4)', gridwidth=1,
+                     title_font_color='#ffffff', tickfont_color='#e0e0e0')
+    fig.update_yaxes(gridcolor='rgba(102, 126, 234, 0.4)', gridwidth=1,
+                     title_font_color='#ffffff', tickfont_color='#e0e0e0')
+    
+    # Update subplot titles color
+    for annotation in fig['layout']['annotations']:
+        annotation['font'] = dict(size=14, color='#ffffff', family='Arial')
     
     return fig
 
@@ -652,7 +756,7 @@ if uploaded_file is not None:
                     with col1:
                         st.markdown("""
                         <div class="analysis-card">
-                            <h4 style='color: #667eea; margin-bottom: 1rem;'>📈 Features 1-10</h4>
+                            <h4 style='color: #ffffff; margin-bottom: 1rem;'>📈 Features 1-10</h4>
                         """, unsafe_allow_html=True)
                         
                         for key, value in features_list[:mid]:
@@ -663,7 +767,7 @@ if uploaded_file is not None:
                     with col2:
                         st.markdown("""
                         <div class="analysis-card">
-                            <h4 style='color: #764ba2; margin-bottom: 1rem;'>📊 Features 11-20</h4>
+                            <h4 style='color: #ffffff; margin-bottom: 1rem;'>📊 Features 11-20</h4>
                         """, unsafe_allow_html=True)
                         
                         for key, value in features_list[mid:]:
@@ -724,7 +828,7 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"❌ Error processing file: {str(e)}")
         st.exception(e)
-        st.info("Please ensure your CSV file is properly formatted with 'time' and 'flux' columns")
+        st.info("💡 **Tips:**\n- Ensure your CSV has time and flux columns\n- Check that data is numeric\n- Try selecting columns manually if auto-detection fails")
 
 else:
     # Empty State
@@ -732,18 +836,18 @@ else:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("""
-        <div style='text-align: center; padding: 3rem; background: rgba(22, 33, 62, 0.5); border-radius: 20px; border: 2px dashed rgba(102, 126, 234, 0.3);'>
-            <h2 style='color: #667eea; margin-bottom: 1rem;'>🪐 Upload Light Curve Data</h2>
-            <p style='color: #a0aec0; font-size: 1.1rem;'>CSV format with time and flux data</p>
-            <p style='color: #718096; font-size: 0.9rem; margin-top: 1rem;'>Column names will be auto-detected<br>Support: TIME, FLUX, BJD, MJD, and common variations</p>
+        <div style='text-align: center; padding: 3rem; background: rgba(22, 33, 62, 0.7); border-radius: 20px; border: 2px dashed rgba(102, 126, 234, 0.6);'>
+            <h2 style='color: #ffffff; margin-bottom: 1rem;'>🪐 Upload Light Curve Data</h2>
+            <p style='color: #d0d0d0; font-size: 1.1rem;'>CSV format with time and flux data</p>
+            <p style='color: #b0b0b0; font-size: 0.9rem; margin-top: 1rem;'>Column names will be auto-detected<br>Support: TIME, FLUX, BJD, MJD, and common variations</p>
         </div>
         """, unsafe_allow_html=True)
 
 # Footer
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("""
-<div style='text-align: center; color: #667eea; padding: 2rem; border-top: 1px solid rgba(102, 126, 234, 0.2);'>
-    <p style='font-size: 0.9rem; opacity: 0.6;'>🪐 Exoplanet Detection AI Platform | Stacking Ensemble Model v20251004_211436</p>
-    <p style='font-size: 0.8rem; opacity: 0.5; margin-top: 0.5rem;'>Trained on 23,289 samples from TESS, Kepler & Confirmed Planets datasets</p>
+<div style='text-align: center; color: #ffffff; padding: 2rem; border-top: 1px solid rgba(102, 126, 234, 0.4);'>
+    <p style='font-size: 0.95rem; opacity: 0.9;'>🪐 Exoplanet Detection AI Platform | Stacking Ensemble Model v20251004_211436</p>
+    <p style='font-size: 0.85rem; opacity: 0.7; margin-top: 0.5rem;'>Trained on 23,289 samples from TESS, Kepler & Confirmed Planets datasets</p>
 </div>
 """, unsafe_allow_html=True)
