@@ -1,6 +1,6 @@
 """
 🌌 Professional Exoplanet Vetting Platform — Vetting Only
-一執行就直接進入「Start Vetting」後的審核頁面（無首頁）。
+直接進入審核頁面（無首頁）
 執行：
     streamlit run vetting_only.py
 """
@@ -9,6 +9,7 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 import time
+from components.banner import render_banner
 
 # ================= Page Configuration =================
 st.set_page_config(
@@ -17,31 +18,116 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# ================= Dark Space Theme CSS =================
-st.markdown(
+render_banner()
+hide_streamlit_header_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
     """
+st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
+
+# ================= Sidebar Toggle (Info / Close) =================
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = True  # 預設開啟
+
+open_sb = st.session_state.sidebar_open
+
+with st.form("sb_toggle_form"):
+    clicked = st.form_submit_button("Close" if open_sb else "Info")
+if clicked:
+    st.session_state.sidebar_open = not open_sb
+    st.rerun()
+
+# 按鈕定位 + 基本動畫設定
+st.markdown("""
 <style>
-  .stApp { background: linear-gradient(135deg,#0a0e27 0%,#16213e 50%,#0f3460 100%); color:#e0e0e0; }
-  .stApp::before { content:""; position:fixed; inset:0; background-image:
-      radial-gradient(2px 2px at 20px 30px,#eee,rgba(0,0,0,0)),
-      radial-gradient(2px 2px at 60px 70px,#fff,rgba(0,0,0,0)),
-      radial-gradient(1px 1px at 50px 50px,#fff,rgba(0,0,0,0));
-      background-repeat:repeat; background-size:200px 200px; opacity:.4; z-index:-1;
-      animation: twinkle 3s ease-in-out infinite; }
-  @keyframes twinkle { 0%,100%{opacity:.3;} 50%{opacity:.6;} }
-  .candidate-card { background: linear-gradient(135deg, rgba(22,33,62,.95), rgba(15,52,96,.95));
-      border:2px solid rgba(102,126,234,.3); border-radius:20px; padding:2rem; margin:1.2rem 0;
-      box-shadow:0 8px 32px rgba(31,38,135,.37); backdrop-filter:blur(10px); }
-  .metric-card { background: rgba(22,33,62,.6); border:1px solid rgba(102,126,234,.3);
-      border-radius:15px; padding:1.2rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,.3); }
-  .confidence-bar { height:30px; border-radius:15px; background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981); position:relative; overflow:hidden; }
-  .confidence-indicator { position:absolute; top:0; left:0; height:100%; background:rgba(255,255,255,.3); border-right:3px solid #fff; box-shadow:0 0 20px rgba(255,255,255,.5); }
-  [data-testid="stSidebar"] { background: linear-gradient(180deg,#0a0e27 0%,#16213e 100%); }
+form#sb_toggle_form{
+  position: fixed; top: 12px; left: 12px; z-index: 10000;
+}
+[data-testid="stSidebar"]{
+  /* 讓 sidebar 變成覆蓋式，滑入/滑出 */
+  position: fixed !important; top: 0 !important; bottom: 0 !important; left: 0 !important;
+  width: 320px !important; min-width: 320px !important;
+  transition: transform .35s ease, opacity .2s ease;
+  z-index: 9998 !important;
+  box-shadow: 6px 0 28px rgba(2,6,23,.55);
+}
+[data-testid="stAppViewContainer"]{
+  /* 主內容不要因為 sidebar 改變尺寸而跳動 */
+  margin-left: 0 !important;
+}
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
+
+# 以兩段 CSS 控制開/關（避免 f-string 內部邏輯造成語法錯誤）
+sidebar_css_closed = """
+<style>
+[data-testid="stSidebar"]{
+  transform: translateX(-100%) !important;
+}
+[data-testid="stSidebar"] *{
+  opacity: 0; pointer-events: none;
+}
+</style>
+"""
+sidebar_css_open = """
+<style>
+[data-testid="stSidebar"]{
+  transform: translateX(0) !important;
+}
+[data-testid="stSidebar"] *{
+  opacity: 1; pointer-events: auto;
+}
+</style>
+"""
+st.markdown(sidebar_css_open if st.session_state.sidebar_open else sidebar_css_closed,
+            unsafe_allow_html=True)
+
+# ================= Dark Space Theme + 全站按鈕配色互換 =================
+st.markdown("""
+<style>
+.stApp { background: linear-gradient(135deg,#0a0e27 0%,#16213e 50%,#0f3460 100%); color:#e0e0e0; }
+.stApp::before { content:""; position:fixed; inset:0;
+    background-image: radial-gradient(2px 2px at 20px 30px,#eee,rgba(0,0,0,0)),
+                      radial-gradient(2px 2px at 60px 70px,#fff,rgba(0,0,0,0)),
+                      radial-gradient(1px 1px at 50px 50px,#fff,rgba(0,0,0,0));
+    background-repeat:repeat; background-size:200px 200px; opacity:.4; z-index:-1;
+    animation: twinkle 3s ease-in-out infinite; }
+@keyframes twinkle { 0%,100%{opacity:.3;} 50%{opacity:.6;} }
+
+.candidate-card { background: linear-gradient(135deg, rgba(22,33,62,.95), rgba(15,52,96,.95));
+    border:2px solid rgba(102,126,234,.3); border-radius:20px; padding:2rem; margin:1.2rem 0;
+    box-shadow:0 8px 32px rgba(31,38,135,.37); backdrop-filter:blur(10px); }
+
+.metric-card { background: rgba(22,33,62,.6); border:1px solid rgba(102,126,234,.3);
+    border-radius:15px; padding:1.2rem; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,.3); }
+
+.confidence-bar { height:30px; border-radius:15px; background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981);
+    position:relative; overflow:hidden; }
+.confidence-indicator { position:absolute; top:0; left:0; height:100%;
+    background:rgba(255,255,255,.3); border-right:3px solid #fff;
+    box-shadow:0 0 20px rgba(255,255,255,.5); }
+
+[data-testid="stSidebar"] { background: linear-gradient(180deg,#0a0e27 0%,#16213e 100%); }
+
+/* —— 全站按鈕：正常/滑過 顏色互換 —— */
+.stButton > button {
+  background: #e5e7eb !important;  /* 正常：亮底 */
+  color: #111827 !important;        /* 深字 */
+  border: 1px solid rgba(99,102,241,.35) !important;
+  border-radius: 10px !important;
+  font-weight: 700 !important;
+  transition: background .2s ease, color .2s ease, border-color .2s ease !important;
+}
+.stButton > button:hover {
+  background: rgba(30,41,59,.95) !important; /* 滑過：深底 */
+  color: #e5e7eb !important;                 /* 亮字 */
+  border-color: rgba(99,102,241,.6) !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # ================= Session State Init =================
 if "candidate_index" not in st.session_state:
@@ -79,7 +165,6 @@ if "labels" not in st.session_state:
     st.session_state.labels = []
 
 # ================= Utils =================
-
 def create_interactive_lightcurve(candidate):
     fig = go.Figure()
     fig.add_trace(
@@ -150,37 +235,14 @@ def confidence_bar(conf):
     """
 
 # ================= Vetting Page (Only) =================
-
 def render_vetting():
     candidates = st.session_state.candidates
     idx = st.session_state.candidate_index
 
-    # Fixed top progress bar (will stay at top when scrolling)
-    total = len(candidates) if candidates else 0
-    top_progress = (idx + 1) / total if total > 0 else 0
-    pct = int(top_progress * 100)
-    st.markdown(f"""
-    <style>
-      /* reserve space so app content isn't hidden under the fixed bar */
-      body > .main, div.block-container, main[role="main"] {{ padding-top: 72px !important; }}
-      #top-progress {{ position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 9999; pointer-events: none; }}
-      #top-progress .wrap {{ height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 18px;
-                           background: rgba(10,14,39,0.70); backdrop-filter: blur(6px); box-shadow: 0 6px 20px rgba(2,6,23,0.6); }}
-      #top-progress .label {{ color: #e6f7ff; font-weight: 700; pointer-events: auto; min-width:160px; white-space:nowrap; }}
-      #top-progress .bar {{ flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden; }}
-      #top-progress .bar > i {{ display: block; height: 100%; width: {pct}%; background: linear-gradient(90deg,#4facfe,#667eea); border-radius: 999px; transition: width 400ms ease; }}
-    </style>
-    <div id="top-progress">
-      <div class="wrap">
-        <div class="label">Candidate {idx+1} / {total} — {pct}%</div>
-        <div class="bar"><i></i></div>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # —— 移除會擋住畫面的頂部固定條（保留一般 st.progress） ——
 
-    # Sidebar — Stellar parameters & stats
+    # Sidebar — Stellar parameters & stats（沿用你的原內容）
     with st.sidebar:
-        # st.markdown("### 🌟 Stellar Parameters")
         st.markdown('<h3 style="margin:0;color:#ffffff;">🌟 Stellar Parameters</h3>', unsafe_allow_html=True)
         if idx < len(candidates):
             cur = candidates[idx]
@@ -198,9 +260,7 @@ def render_vetting():
                 unsafe_allow_html=True,
             )
             st.markdown("---")
-            # st.markdown("### 📊 Quick Stats")
             st.markdown('<h3 style="margin:0;color:#ffffff;">📊 Quick Stats</h3>', unsafe_allow_html=True)
-            # 使用自訂 HTML 以確保文字為純白色
             st.markdown(
                 f"""
                 <div style='display:flex;gap:0.6rem;flex-direction:column;'>
@@ -218,7 +278,6 @@ def render_vetting():
             )
         st.markdown("---")
         st.markdown('<h3 style="margin:0;color:#ffffff;">ℹ️ Instructions</h3>', unsafe_allow_html=True)
-        # 使用 metric-card 包裹、與其他區塊一致的邊框樣式
         st.markdown(
             """
             <div class='metric-card' style='text-align:left;padding:.8rem;'>
@@ -258,7 +317,7 @@ def render_vetting():
 
     cur = candidates[idx]
 
-    # Progress
+    # 一般進度條（非頂部固定條）
     progress = (idx + 1) / len(candidates)
     st.progress(progress)
     st.markdown(
@@ -337,7 +396,7 @@ def render_vetting():
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Navigation
+    # Navigation（加回 Previous / Skip / Reset）
     n1, n2, n3 = st.columns(3)
     with n1:
         if st.button("⬅️ Previous", use_container_width=True, disabled=(idx == 0)):
