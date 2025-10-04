@@ -54,17 +54,32 @@ class NASAExoplanetTrainer:
         # 先檢查實際的值
         print(f"\n📊 '{disp_col}' 欄位的實際值:")
         print(df[disp_col].value_counts())
-        print(f"\n所有唯一值: {df[disp_col].unique()}")
         
-        # 直接使用有效的值，過濾掉空值
+        # 過濾掉空值
         df = df.dropna(subset=[disp_col])
-        df['disposition'] = df[disp_col]
         
-        # 過濾掉明顯無效的標籤（如果有的話）
-        valid_dispositions = df['disposition'].value_counts()
+        # 將類別合併成有意義的組
+        label_mapping = {
+            'KP': 'PLANET',      # Known Planet
+            'CP': 'PLANET',      # Confirmed Planet
+            'PC': 'PLANET',      # Planet Candidate
+            'EB': 'FALSE_POSITIVE',  # Eclipsing Binary
+            'FP': 'FALSE_POSITIVE',  # False Positive
+            'IS': 'OTHER',       # Instrumental Signal
+            'V': 'OTHER',        # Variable Star
+            'O': 'OTHER'         # Other
+        }
+        
+        df['disposition'] = df[disp_col].map(label_mapping)
+        df = df.dropna(subset=['disposition'])
+        
         print(f"\n✓ 過濾後資料: {df.shape}")
-        print(f"\n類別分佈:")
-        print(valid_dispositions)
+        print(f"\n合併後類別分佈:")
+        print(df['disposition'].value_counts())
+        print(f"\n類別說明:")
+        print("  - PLANET: 行星（已知+確認+候選）")
+        print("  - FALSE_POSITIVE: 假陽性（食雙星+假陽性）")
+        print("  - OTHER: 其他（儀器訊號+變星+其他）")
         
         return df
 
