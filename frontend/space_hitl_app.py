@@ -479,18 +479,18 @@ elif st.session_state.page == 'review':
         </div>
         """, unsafe_allow_html=True)
         
-        # Candidate Header
-        st.markdown(f"""
-        <div class="candidate-card">
-            <div style='display: flex; justify-content: space-between; align-items: center;'>
-                <h2 style='color: #667eea; margin: 0;'>🪐 {current['id']}</h2>
-                <div style='text-align: right;'>
-                    <div style='font-size: 0.9rem; color: #a0a0a0;'>AI Confidence</div>
-                    <div style='font-size: 2rem; color: #f093fb; font-weight: bold;'>{current['ai_confidence']:.0%}</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # # Candidate Header
+        # st.markdown(f"""
+        # <div class="candidate-card">
+        #     <div style='display: flex; justify-content: space-between; align-items: center;'>
+        #         <h2 style='color: #667eea; margin: 0;'>🪐 {current['id']}</h2>
+        #         <div style='text-align: right;'>
+        #             <div style='font-size: 0.9rem; color: #a0a0a0;'>AI Confidence</div>
+        #             <div style='font-size: 2rem; color: #f093fb; font-weight: bold;'>{current['ai_confidence']:.0%}</div>
+        #         </div>
+        #     </div>
+        # </div>
+        # """, unsafe_allow_html=True)
         
         # AI Confidence Bar
         st.markdown(create_confidence_bar(current['ai_confidence']), unsafe_allow_html=True)
