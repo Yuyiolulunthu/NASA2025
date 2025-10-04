@@ -1,0 +1,20 @@
+{
+  "features": [
+    "koi_duration",
+    "koi_model_snr",
+    "duration_period_ratio",
+    "koi_steff",
+    "koi_depth",
+    "koi_prad",
+    "koi_period",
+    "depth_radius_ratio",
+    "koi_srad",
+    "koi_slogg",
+    "koi_teq",
+    "temp_insol_ratio",
+    "koi_insol",
+    "log_snr"
+  ],
+  "version": "20251004_004951",
+  "data_source": "NASA Kepler"
+}
