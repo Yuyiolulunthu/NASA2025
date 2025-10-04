@@ -1,10 +1,12 @@
+import os
+import runpy
 import streamlit as st
 from components.banner import render_banner
 
 # ---------- Page Config ----------
 st.set_page_config(
     page_title="Exoplanet Hunter",
-    page_icon="🌌",
+    page_icon="Web/logo.png",
     layout="wide",
 )
 render_banner()
@@ -16,6 +18,20 @@ hide_streamlit_header_style = """
     </style>
     """
 st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
+
+# ---------- URL 路由攔截：?page=vetting 直接進審核頁 ----------
+def get_qp():
+    # 相容新舊版 Streamlit 取得 query params
+    try:
+        return st.query_params
+    except Exception:
+        return st.experimental_get_query_params()
+
+_qp = get_qp()
+if _qp.get("page") == "vetting":
+    here = os.path.dirname(__file__)
+    runpy.run_path(os.path.join(here, "pages", "vetting.py"))
+    st.stop()
 
 # ---------- Custom CSS ----------
 st.markdown("""
@@ -195,16 +211,30 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Buttons ---
+# --- Buttons (唯一一段) ---
+def go_vetting():
+    # 新版優先
+    if hasattr(st, "switch_page"):
+        st.switch_page("pages/vetting.py")
+    else:
+        # 舊版相容：改用網址參數 + rerun
+        try:
+            st.query_params.update(page="vetting")
+        except Exception:
+            st.experimental_set_query_params(page="vetting")
+        st.rerun()
+
 b1, b2, b3 = st.columns(3)
 with b1:
-    st.button("Start Vetting", use_container_width=True, key="btn_start_vetting")
+    if st.button("Start Vetting", use_container_width=True, key="btn_start_vetting_main"):
+        go_vetting()
 with b2:
-    st.button("Candidate Database", use_container_width=True, key="btn_db")
+    st.button("Candidate Database", use_container_width=True, key="btn_db_main")
 with b3:
-    st.button("User Contributions", use_container_width=True, key="btn_user")
+    st.button("User Contributions", use_container_width=True, key="btn_user_main")
 
 # --- Footer ---
 st.markdown('<br><br>', unsafe_allow_html=True)
 st.markdown('<div class="footer">Exoplanet Hunter v3.1 — Dynamic Transit Background</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
+
