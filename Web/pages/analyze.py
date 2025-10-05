@@ -18,6 +18,16 @@ st.set_page_config(
 )
 render_banner()
 
+# ---- Session State (persist across reruns) ----
+if 'analysis_ready' not in st.session_state:
+    st.session_state.analysis_ready = False     # 是否已有分析結果
+if 'analysis' not in st.session_state:
+    st.session_state.analysis = None            # {'features':..., 'extra':..., 'results':...}
+if 'pp_range' not in st.session_state:
+    st.session_state.pp_range = (0.50, 1.00)    # Planet Prob 篩選區間
+if 'last_upload_token' not in st.session_state:
+    st.session_state.last_upload_token = None   # 用來偵測是否換了新檔
+
 hide_streamlit_header_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -247,8 +257,7 @@ def create_visualization_plot(df, features, extra_features):
     fig.add_hline(y=mean_flux-std_flux, line_dash="dot", line_color="#ff0080", line_width=2, annotation_text="-1σ", row=1, col=1)
 
     fig.add_trace(go.Histogram(x=df['flux'], name='Distribution', nbinsx=40,
-                               marker=dict(color='#667eea', opacity=0.7, line=dict(color='#00f5ff', width=1)),
-                               hovertemplate='<b>Flux Range:</b> %{x}<br><b>Count:</b> %{y}<extra></extra>'),
+                               marker=dict(color='#667eea', opacity=0.7, line=dict(color='#00f5ff', width=1))),
                   row=1, col=2)
 
     flux = df['flux'].values
@@ -354,6 +363,19 @@ if uploaded_file is not None:
     try:
         with st.spinner('Loading data...'):
             df = pd.read_csv(uploaded_file); time.sleep(0.2)
+
+        # 以檔名 + 大小建立 token；若換檔就重置狀態
+        try:
+            size_hint = uploaded_file.size
+        except Exception:
+            size_hint = len(uploaded_file.getvalue())
+        upload_token = f"{uploaded_file.name}:{size_hint}"
+        if st.session_state.last_upload_token != upload_token:
+            st.session_state.last_upload_token = upload_token
+            st.session_state.analysis_ready = False
+            st.session_state.analysis = None
+            st.session_state.pp_range = (0.50, 1.00)
+
         st.success(f"Data loaded: {len(df):,} records")
         st.info(f"Detected columns: {', '.join(df.columns.tolist())}")
 
@@ -392,168 +414,140 @@ if uploaded_file is not None:
         # ---------- Analyze Button ----------
         a1,a2,a3 = st.columns([1,2,1])
         with a2:
-            run_clicked = auto_analyze or st.button("Run Analysis", use_container_width=True, type="primary")
+            run_clicked = st.button("Run Analysis", use_container_width=True, type="primary")
 
-        # Fixed container for results to avoid layout jumps
-        results_area = st.container()
+        should_run_now = run_clicked or (auto_analyze and not st.session_state.analysis_ready)
 
-        if run_clicked:
-            progress = st.progress(0)
-            status = st.empty()
-
-            # ===== pipeline =====
+        # 執行分析並存入 session（之後調整滑桿介面不會消失）
+        if should_run_now:
+            progress = st.progress(0); status = st.empty()
             status.markdown("### Step 1/5: Preprocessing data..."); progress.progress(10); time.sleep(0.3)
             status.markdown("### Step 2/5: Extracting features..."); progress.progress(30)
             features, extra = extract_features(df_processed)
-            if features: st.success(f"Extracted {len(features)} features"); time.sleep(0.2)
-
-            status.markdown("### Step 3/5: Loading model..."); progress.progress(50)
-            model = load_model(); time.sleep(0.2)
-
+            status.markdown("### Step 3/5: Loading model..."); progress.progress(50); model = load_model(); time.sleep(0.2)
             status.markdown("### Step 4/5: Running classification..."); progress.progress(75)
-            results = predict_with_model(features, model); time.sleep(0.25)
-
-            status.markdown("### Step 5/5: Generating results..."); progress.progress(100); time.sleep(0.15)
+            results = predict_with_model(features, model); time.sleep(0.2)
+            status.markdown("### Step 5/5: Generating results..."); progress.progress(100); time.sleep(0.1)
             status.empty(); progress.empty()
-            # =====================
 
-            with results_area:
-                st.markdown('<div class="rs-divider"></div>', unsafe_allow_html=True)
-                st.markdown('<div class="rs-section rs-title">Detection Results</div>', unsafe_allow_html=True)
+            st.session_state.analysis = {'features': features, 'extra': extra, 'results': results}
+            st.session_state.analysis_ready = True
 
-                # --- Prediction badge ---
-                is_planet = results['prediction'] == 'PLANET'
-                badge_cls = "ok" if is_planet else "no"
-                label = "PLANET DETECTED" if is_planet else "NO PLANET"
-                st.markdown(f'<div class="rs-badge {badge_cls}">{label}</div>', unsafe_allow_html=True)
+        # ---------- 顯示分析結果（從 session 讀取；滑桿變動也會保留） ----------
+        if st.session_state.analysis_ready and st.session_state.analysis is not None:
+            features = st.session_state.analysis['features']
+            extra    = st.session_state.analysis['extra']
+            results  = st.session_state.analysis['results']
 
-                # --- Classification Metrics ---
-                st.markdown('<div class="rs-section rs-title">Classification Metrics</div>', unsafe_allow_html=True)
-                st.markdown(f"""
-                <div class="rs-grid">
-                  <div class="rs-card"><div class="lbl">Confidence</div><div class="val">{results['confidence']:.1%}</div></div>
-                  <div class="rs-card"><div class="lbl">Planet Prob.</div><div class="val">{results['planet_probability']:.1%}</div></div>
-                  <div class="rs-card"><div class="lbl">Not-Planet Prob.</div><div class="val">{results['not_planet_probability']:.1%}</div></div>
-                  <div class="rs-card"><div class="lbl">Feature Count</div><div class="val">{results['feature_count']}</div></div>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown('<div class="rs-divider"></div>', unsafe_allow_html=True)
+            st.markdown('<div class="rs-section rs-title">Detection Results</div>', unsafe_allow_html=True)
 
-                # --- NEW: Planet Prob 範圍調整（只影響顯示/篩選，不改 prediction） ---
-                st.markdown('<div class="rs-section rs-title">Planet Probability Range</div>', unsafe_allow_html=True)
-                pp_range = st.slider(
-                    "Keep result when Planet Probability is within:",
-                    min_value=0.0, max_value=1.0,
-                    value=(0.50, 1.00), step=0.01,
-                    key="pp_range_slider"
-                )
-                p = float(results['planet_probability'])
-                in_range = (pp_range[0] <= p <= pp_range[1])
-                status_text = "IN RANGE" if in_range else "OUT OF RANGE"
-                status_cls = "ok" if in_range else "no"
-                st.markdown(f'<div class="rs-badge {status_cls}">{status_text}: {p:.1%}</div>', unsafe_allow_html=True)
+            is_planet = results['prediction'] == 'PLANET'
+            badge_cls = "ok" if is_planet else "no"
+            label = "PLANET DETECTED" if is_planet else "NO PLANET"
+            st.markdown(f'<div class="rs-badge {badge_cls}">{label}</div>', unsafe_allow_html=True)
 
-                # --- Model / Run Info ---
-                st.markdown(f"""
-                <div class="rs-grid">
-                  <div class="rs-card"><div class="lbl">Model Type</div><div class="val">{results['model_type']}</div></div>
-                  <div class="rs-card"><div class="lbl">Version</div><div class="val">{results['model_version']}</div></div>
-                  <div class="rs-card"><div class="lbl">Dataset</div><div class="val">23,289</div></div>
-                </div>
-                """, unsafe_allow_html=True)
+            st.markdown('<div class="rs-section rs-title">Classification Metrics</div>', unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="rs-grid">
+              <div class="rs-card"><div class="lbl">Confidence</div><div class="val">{results['confidence']:.1%}</div></div>
+              <div class="rs-card"><div class="lbl">Planet Prob.</div><div class="val">{results['planet_probability']:.1%}</div></div>
+              <div class="rs-card"><div class="lbl">Not-Planet Prob.</div><div class="val">{results['not_planet_probability']:.1%}</div></div>
+              <div class="rs-card"><div class="lbl">Feature Count</div><div class="val">{results['feature_count']}</div></div>
+            </div>
+            """, unsafe_allow_html=True)
 
-                # --- Features (optional) ---
-                if show_features and features:
-                    st.markdown('<div class="rs-section rs-title">Extracted Features</div>', unsafe_allow_html=True)
-                    left, right = st.columns(2)
-                    items = list(features.items()); mid = len(items) // 2
-                    with left:
-                        st.markdown("<div class='analysis-card'><h3>Primary</h3>", unsafe_allow_html=True)
-                        for k, v in items[:mid]:
-                            st.markdown(f"<div class='rs-card'><div class='lbl'>{k.replace('_',' ').title()}</div><div class='val'>{v:.6f}</div></div>", unsafe_allow_html=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
-                    with right:
-                        st.markdown("<div class='analysis-card'><h3>Secondary</h3>", unsafe_allow_html=True)
-                        for k, v in items[mid:]:
-                            st.markdown(f"<div class='rs-card'><div class='lbl'>{k.replace('_',' ').title()}</div><div class='val'>{v:.6f}</div></div>", unsafe_allow_html=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
+            # ---- Planet Prob 範圍調整（值存在 session，不會因重跑消失）----
+            st.markdown('<div class="rs-section rs-title">Planet Probability Range</div>', unsafe_allow_html=True)
+            pp_range = st.slider(
+                "Keep result when Planet Probability is within:",
+                min_value=0.0, max_value=1.0,
+                value=st.session_state.pp_range, step=0.01,
+                key="pp_range"
+            )
+            p = float(results['planet_probability'])
+            in_range = (pp_range[0] <= p <= pp_range[1])
+            status_text = "IN RANGE" if in_range else "OUT OF RANGE"
+            status_cls = "ok" if in_range else "no"
+            st.markdown(f'<div class="rs-badge {status_cls}">{status_text}: {p:.1%}</div>', unsafe_allow_html=True)
 
-                # --- Visualization (optional) ---
-                if show_visualization:
-                    st.markdown('<div class="rs-section rs-title">Light Curve Analysis</div>', unsafe_allow_html=True)
-                    fig = create_visualization_plot(df_processed, features, extra)
-                    st.plotly_chart(fig, use_container_width=True)
+            # --- Model / Run Info ---
+            st.markdown(f"""
+            <div class="rs-grid">
+              <div class="rs-card"><div class="lbl">Model Type</div><div class="val">{results['model_type']}</div></div>
+              <div class="rs-card"><div class="lbl">Version</div><div class="val">{results['model_version']}</div></div>
+              <div class="rs-card"><div class="lbl">Dataset</div><div class="val">23,289</div></div>
+            </div>
+            """, unsafe_allow_html=True)
 
-                # --- Advanced (optional) ---
-                if show_advanced:
-                    st.markdown('<div class="rs-section rs-title">Advanced Analysis</div>', unsafe_allow_html=True)
-                    cA, cB = st.columns(2)
-                    with cA:
-                        st.markdown("<div class='analysis-card'><h3>Frequency Domain</h3>", unsafe_allow_html=True)
-                        from scipy.fft import fft, fftfreq
-                        F = fft(df_processed['flux'].values); n = len(df_processed)
-                        dt = float(df_processed['time'].diff().mean()) if df_processed['time'].diff().notna().any() else 1.0
-                        dt = 1.0 if dt == 0 else dt
-                        freq = fftfreq(n, dt)
-                        dom_idx = np.argmax(np.abs(F[1:n//2])) + 1 if n > 2 else 0
-                        dom_f = freq[dom_idx] if dom_idx < len(freq) else 0.0
-                        peak = float(np.max(np.abs(F[1:n//2]))) if n > 2 else 0.0
-                        st.markdown(f"<div class='rs-card'><div class='lbl'>Dominant Frequency</div><div class='val'>{dom_f:.6f}</div></div>", unsafe_allow_html=True)
-                        st.markdown(f"<div class='rs-card'><div class='lbl'>FFT Peak Power</div><div class='val'>{peak:.2f}</div></div>", unsafe_allow_html=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
-                    with cB:
-                        st.markdown("<div class='analysis-card'><h3>Statistical Tests</h3>", unsafe_allow_html=True)
-                        from scipy.stats import normaltest
-                        try:
-                            if len(df_processed['flux']) >= 8:
-                                _, pval = normaltest(df_processed['flux'])
-                            else:
-                                pval = np.nan
-                        except Exception:
+            # --- Features (optional) ---
+            if show_features and features:
+                st.markdown('<div class="rs-section rs-title">Extracted Features</div>', unsafe_allow_html=True)
+                left, right = st.columns(2)
+                items = list(features.items()); mid = len(items) // 2
+                with left:
+                    st.markdown("<div class='analysis-card'><h3>Primary</h3>", unsafe_allow_html=True)
+                    for k, v in items[:mid]:
+                        st.markdown(f"<div class='rs-card'><div class='lbl'>{k.replace('_',' ').title()}</div><div class='val'>{v:.6f}</div></div>", unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                with right:
+                    st.markdown("<div class='analysis-card'><h3>Secondary</h3>", unsafe_allow_html=True)
+                    for k, v in items[mid:]:
+                        st.markdown(f"<div class='rs-card'><div class='lbl'>{k.replace('_',' ').title()}</div><div class='val'>{v:.6f}</div></div>", unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
+
+            # --- Visualization (optional) ---
+            if show_visualization:
+                st.markdown('<div class="rs-section rs-title">Light Curve Analysis</div>', unsafe_allow_html=True)
+                fig = create_visualization_plot(df_processed, features, extra)
+                st.plotly_chart(fig, use_container_width=True)
+
+            # --- Advanced (optional) ---
+            if show_advanced:
+                st.markdown('<div class="rs-section rs-title">Advanced Analysis</div>', unsafe_allow_html=True)
+                cA, cB = st.columns(2)
+                with cA:
+                    st.markdown("<div class='analysis-card'><h3>Frequency Domain</h3>", unsafe_allow_html=True)
+                    from scipy.fft import fft, fftfreq
+                    F = fft(df_processed['flux'].values); n = len(df_processed)
+                    dt = float(df_processed['time'].diff().mean()) if df_processed['time'].diff().notna().any() else 1.0
+                    dt = 1.0 if dt == 0 else dt
+                    freq = fftfreq(n, dt)
+                    dom_idx = np.argmax(np.abs(F[1:n//2])) + 1 if n > 2 else 0
+                    dom_f = freq[dom_idx] if dom_idx < len(freq) else 0.0
+                    peak = float(np.max(np.abs(F[1:n//2]))) if n > 2 else 0.0
+                    st.markdown(f"<div class='rs-card'><div class='lbl'>Dominant Frequency</div><div class='val'>{dom_f:.6f}</div></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='rs-card'><div class='lbl'>FFT Peak Power</div><div class='val'>{peak:.2f}</div></div>", unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                with cB:
+                    st.markdown("<div class='analysis-card'><h3>Statistical Tests</h3>", unsafe_allow_html=True)
+                    from scipy.stats import normaltest
+                    try:
+                        if len(df_processed['flux']) >= 8:
+                            _, pval = normaltest(df_processed['flux'])
+                        else:
                             pval = np.nan
-                        st.markdown(f"<div class='rs-card'><div class='lbl'>Normality p-value</div><div class='val'>{(pval if not np.isnan(pval) else 0):.6f}</div></div>", unsafe_allow_html=True)
-                        st.markdown(f"<div class='rs-card'><div class='lbl'>Skewness</div><div class='val'>{extra.get('skewness',0):.4f}</div></div>", unsafe_allow_html=True)
-                        st.markdown(f"<div class='rs-card'><div class='lbl'>Kurtosis</div><div class='val'>{extra.get('kurtosis',0):.4f}</div></div>", unsafe_allow_html=True)
-                        st.markdown("</div>", unsafe_allow_html=True)
+                    except Exception:
+                        pval = np.nan
+                    st.markdown(f"<div class='rs-card'><div class='lbl'>Normality p-value</div><div class='val'>{(pval if not np.isnan(pval) else 0):.6f}</div></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='rs-card'><div class='lbl'>Skewness</div><div class='val'>{extra.get('skewness',0):.4f}</div></div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='rs-card'><div class='lbl'>Kurtosis</div><div class='val'>{extra.get('kurtosis',0):.4f}</div></div>", unsafe_allow_html=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
 
-                # --- Summary / Quality / Recommendations ---
-                st.markdown('<div class="rs-divider"></div>', unsafe_allow_html=True)
-                st.markdown('<div class="rs-section rs-title">Analysis Summary</div>', unsafe_allow_html=True)
-
-                if is_planet:
-                    st.success("Exoplanet transit signature detected.")
-                    if results['confidence'] > 0.90: st.info("Very high confidence — excellent detection quality.")
-                    elif results['confidence'] > 0.75: st.info("High confidence — strong evidence of planetary transit.")
-                    elif results['confidence'] > 0.60: st.warning("Moderate confidence — additional verification recommended.")
-                    else: st.warning("Low confidence — further observation required.")
-                else:
-                    st.info("No exoplanet transit detected.")
-                    if results['confidence'] > 0.85: st.success("High certainty in negative classification.")
-                    else: st.warning("Consider collecting additional data for better certainty.")
-
-                st.markdown('<div class="rs-section rs-title">Data Quality Report</div>', unsafe_allow_html=True)
-                snr = extra.get('snr', float(df_processed['flux'].mean())/float(df_processed['flux'].std()) if df_processed['flux'].std()!=0 else 0)
-                q = extra.get('data_quality_score', 50)
-                st.markdown(f"""
-                <div class="rs-grid">
-                  <div class="rs-card"><div class="lbl">Signal-to-Noise Ratio</div><div class="val">{snr:.2f}</div></div>
-                  <div class="rs-card"><div class="lbl">Data Quality Score</div><div class="val">{q:.1f}</div></div>
-                  <div class="rs-card"><div class="lbl">Coeff. of Variation</div><div class="val">{extra.get('cv_flux', features.get('cv_flux',0)):.6f}</div></div>
-                </div>
-                """, unsafe_allow_html=True)
-
-                st.markdown('<div class="rs-section rs-title">Export Analysis</div>', unsafe_allow_html=True)
-                full = {**results, **features, **extra,
-                        "pp_range_min": pp_range[0], "pp_range_max": pp_range[1],
-                        "pp_in_range": in_range}
-                csv = pd.DataFrame([full]).to_csv(index=False)
-                ts = time.strftime('%Y%m%d_%H%M%S')
-                st.download_button(
-                    "Download Complete Report (CSV)",
-                    data=csv,
-                    file_name=f"exoplanet_analysis_{ts}.csv",
-                    mime="text/csv",
-                    use_container_width=True
-                )
+            # --- Export ---
+            full = {**results, **features, **extra,
+                    "pp_range_min": st.session_state.pp_range[0],
+                    "pp_range_max": st.session_state.pp_range[1],
+                    "pp_in_range": in_range}
+            csv = pd.DataFrame([full]).to_csv(index=False)
+            ts = time.strftime('%Y%m%d_%H%M%S')
+            st.download_button(
+                "Download Complete Report (CSV)",
+                data=csv,
+                file_name=f"exoplanet_analysis_{ts}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
 
     except Exception as e:
         st.error(f"Error: {str(e)}")
@@ -577,31 +571,6 @@ else:
                 <p style='color:#fff; font-size:1.2rem; margin:.9rem 0; font-weight:500;'>• Real-Time Processing</p>
                 <p style='color:#fff; font-size:1.2rem; margin:.9rem 0; font-weight:500;'>• High Accuracy AI Model</p>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<br><br>", unsafe_allow_html=True)
-
-    f1,f2,f3 = st.columns(3)
-    with f1:
-        st.markdown("""
-        <div class="analysis-card feature-card">
-            <h3>Machine Learning</h3>
-            <p>Advanced ensemble with multi-layer feature extraction</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with f2:
-        st.markdown("""
-        <div class="analysis-card feature-card">
-            <h3>Real-Time Analysis</h3>
-            <p>Instant classification with signal processing</p>
-        </div>
-        """, unsafe_allow_html=True)
-    with f3:
-        st.markdown("""
-        <div class="analysis-card feature-card">
-            <h3>High Precision</h3>
-            <p>Validated on astronomical datasets</p>
         </div>
         """, unsafe_allow_html=True)
 
