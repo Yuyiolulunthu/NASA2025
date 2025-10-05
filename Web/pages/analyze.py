@@ -16,6 +16,14 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+hide_streamlit_header_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 render_banner()
 
 # ---- Session State (persist across reruns) ----
@@ -29,13 +37,6 @@ if 'last_upload_token' not in st.session_state:
     st.session_state.last_upload_token = None   # 用來偵測是否換了新檔
 
 # ---- Hide default header/footer ----
-st.markdown("""
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-""", unsafe_allow_html=True)
 
 # ========== Paths ==========
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

@@ -22,6 +22,14 @@ st.set_page_config(
     page_icon="Web/logo.png",
     layout="wide",
 )
+hide_streamlit_header_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 
 if has_banner:
     render_banner()
