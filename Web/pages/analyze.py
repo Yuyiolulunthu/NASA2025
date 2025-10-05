@@ -24,18 +24,18 @@ if 'analysis_ready' not in st.session_state:
 if 'analysis' not in st.session_state:
     st.session_state.analysis = None            # {'features':..., 'extra':..., 'results':...}
 if 'pp_range' not in st.session_state:
-    st.session_state.pp_range = (0.50, 1.00)    # Planet Prob 篩選區間
+    st.session_state.pp_range = (0.50, 1.00)    # Planet Prob 篩選區間（分析前可設定）
 if 'last_upload_token' not in st.session_state:
     st.session_state.last_upload_token = None   # 用來偵測是否換了新檔
 
-hide_streamlit_header_style = """
+# ---- Hide default header/footer ----
+st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     </style>
-"""
-st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ========== Paths ==========
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -364,7 +364,7 @@ if uploaded_file is not None:
         with st.spinner('Loading data...'):
             df = pd.read_csv(uploaded_file); time.sleep(0.2)
 
-        # 以檔名 + 大小建立 token；若換檔就重置狀態
+        # 以檔名 + 大小建立 token；若換檔就重置狀態（注意：這在建立 slider 之前執行）
         try:
             size_hint = uploaded_file.size
         except Exception:
@@ -374,7 +374,7 @@ if uploaded_file is not None:
             st.session_state.last_upload_token = upload_token
             st.session_state.analysis_ready = False
             st.session_state.analysis = None
-            st.session_state.pp_range = (0.50, 1.00)
+            st.session_state.pp_range = (0.50, 1.00)  # OK：此時還沒畫出 slider
 
         st.success(f"Data loaded: {len(df):,} records")
         st.info(f"Detected columns: {', '.join(df.columns.tolist())}")
@@ -399,7 +399,7 @@ if uploaded_file is not None:
         df_processed['time'] = df[time_col]
         df_processed['flux'] = df[flux_col]
 
-        # Preview & Stats
+        # ---------- Data Preview ----------
         with st.expander("Data Preview & Statistics", expanded=True):
             m1,m2,m3,m4 = st.columns(4)
             with m1: st.markdown(f"<div class='metric-card'><div class='metric-label'>Data Points</div><div class='metric-value'>{len(df_processed):,}</div></div>", unsafe_allow_html=True)
@@ -411,6 +411,17 @@ if uploaded_file is not None:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # ---------- (Pre-analysis) Planet Prob Preference ----------
+        pref1, pref2, pref3 = st.columns([1,3,1])
+        with pref2:
+            st.markdown("### Planet Probability Preference")
+            pp_range = st.slider(
+                "Keep result when Planet Probability is within:",
+                min_value=0.0, max_value=1.0,
+                value=st.session_state.pp_range, step=0.01,
+                key="pp_range"  # 只讀寫入 key；不要再做 st.session_state.pp_range = slider(...)
+            )
+
         # ---------- Analyze Button ----------
         a1,a2,a3 = st.columns([1,2,1])
         with a2:
@@ -418,7 +429,7 @@ if uploaded_file is not None:
 
         should_run_now = run_clicked or (auto_analyze and not st.session_state.analysis_ready)
 
-        # 執行分析並存入 session（之後調整滑桿介面不會消失）
+        # 執行分析並存入 session（之後拉動滑桿介面不會消失）
         if should_run_now:
             progress = st.progress(0); status = st.empty()
             status.markdown("### Step 1/5: Preprocessing data..."); progress.progress(10); time.sleep(0.3)
@@ -457,19 +468,18 @@ if uploaded_file is not None:
             </div>
             """, unsafe_allow_html=True)
 
-            # ---- Planet Prob 範圍調整（值存在 session，不會因重跑消失）----
-            st.markdown('<div class="rs-section rs-title">Planet Probability Range</div>', unsafe_allow_html=True)
-            pp_range = st.slider(
-                "Keep result when Planet Probability is within:",
-                min_value=0.0, max_value=1.0,
-                value=st.session_state.pp_range, step=0.01,
-                key="pp_range"
-            )
+            # ---- 使用「分析前」設定的範圍來顯示狀態 ----
             p = float(results['planet_probability'])
-            in_range = (pp_range[0] <= p <= pp_range[1])
+            # 讀 slider 當前值：優先用 pp_range 區域變數（存在時），否則 fallback session
+            current_range = pp_range if 'pp_range' in locals() else st.session_state.pp_range
+            in_range = (current_range[0] <= p <= current_range[1])
             status_text = "IN RANGE" if in_range else "OUT OF RANGE"
             status_cls = "ok" if in_range else "no"
-            st.markdown(f'<div class="rs-badge {status_cls}">{status_text}: {p:.1%}</div>', unsafe_allow_html=True)
+            st.markdown(
+                f'<div class="rs-badge {status_cls}">{status_text}: {p:.1%} '
+                f'(target {current_range[0]:.0%}–{current_range[1]:.0%})</div>',
+                unsafe_allow_html=True
+            )
 
             # --- Model / Run Info ---
             st.markdown(f"""
@@ -536,8 +546,8 @@ if uploaded_file is not None:
 
             # --- Export ---
             full = {**results, **features, **extra,
-                    "pp_range_min": st.session_state.pp_range[0],
-                    "pp_range_max": st.session_state.pp_range[1],
+                    "pp_range_min": current_range[0],
+                    "pp_range_max": current_range[1],
                     "pp_in_range": in_range}
             csv = pd.DataFrame([full]).to_csv(index=False)
             ts = time.strftime('%Y%m%d_%H%M%S')
