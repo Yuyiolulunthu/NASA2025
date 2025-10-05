@@ -416,6 +416,45 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Make top navigation fixed at the BOTTOM of the viewport (and avoid covering content)
+st.markdown(
+    """
+    <style>
+      .topnav{
+        position: fixed !important;
+        left: 0; right: 0;
+        top: auto !important; bottom: 0 !important;
+        z-index: 1050 !important;
+        backdrop-filter: saturate(140%) blur(8px);
+        background: rgba(10,14,33,0.86);
+        border-top: 1px solid var(--border);
+        padding: .6rem 1rem;
+      }
+      /* ensure content can be pushed up so it isn't hidden behind the fixed nav */
+      .block-container { transition: padding-bottom .12s ease !important; }
+    </style>
+    <script>
+    (function(){
+      function updateSpacing(){
+        const nav = document.querySelector('.topnav');
+        const navH = nav ? Math.ceil(nav.getBoundingClientRect().height) : 0;
+        const bc = document.querySelector('.block-container') || document.querySelector('main[role=\"main\"]') || document.body;
+        if (bc) bc.style.paddingBottom = (navH + 18) + 'px';
+      }
+      window.addEventListener('load', updateSpacing);
+      window.addEventListener('resize', updateSpacing);
+      if (window.ResizeObserver){
+        const el = document.querySelector('.topnav');
+        if (el) new ResizeObserver(updateSpacing).observe(el);
+      }
+      setTimeout(updateSpacing, 250);
+    })();
+    </script>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 # ================== Transit Background (HTML) ==================
 st.markdown(
     """

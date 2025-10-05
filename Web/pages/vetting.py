@@ -194,7 +194,7 @@ if "candidates" not in st.session_state:
                 "snr": float(rng.uniform(10, 50)),
                 "radius_ratio": float(rng.uniform(0.05, 0.15)),
                 "ai_confidence": float(rng.uniform(0.5, 0.95)),
-                "transit_times": events[:3],
+                "transit_times": events,
                 "color_index": float(rng.uniform(0.5, 1.5)),
                 "effective_temp": float(rng.uniform(4000, 7000)),
             }
