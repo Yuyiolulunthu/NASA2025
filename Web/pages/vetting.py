@@ -1,6 +1,6 @@
 """
 Exoplanet Vetting Platform — Enterprise (No Emoji)
-Transit selector above the chart, and radio option text forced white.
+Transit selector above the chart, radio text white and enlarged 3x.
 Run:
     streamlit run vetting_only.py
 """
@@ -10,25 +10,15 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
-from components.banner import render_banner # Assumed available, otherwise remove or mock
 
 # ========== Page Config ==========
 st.set_page_config(
     page_title="Exoplanet Hunter — Vetting",
-    page_icon="Web/logo.png", # Placeholder, ensure path is correct
+    page_icon="🌌",
     layout="wide",
     initial_sidebar_state="expanded",
 )
-# Assuming render_banner exists or removing it if it causes issues outside of the original environment
-render_banner() 
-hide_streamlit_header_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-    """
-st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
+
 pio.templates.default = "plotly_dark"
 
 # ========== CSS ==========
@@ -49,13 +39,27 @@ st.markdown(
   [data-testid="stRadio"] div[role="radiogroup"] label > div:nth-child(2),
   [data-testid="stRadio"] label span { color:#ffffff !important; font-weight:500; }
 
+  /* === 放大 radio 選項（約 3 倍） === */
+  [data-testid="stRadio"] div[role="radiogroup"] label {
+      transform: scale(1.8);
+      transform-origin: left center;
+      margin-right: 2.5rem;
+  }
+  [data-testid="stRadio"] div[role="radiogroup"] {
+      gap: 2.5rem !important;
+  }
+  [data-testid="stRadio"] label span {
+      font-size: 1.1rem !important;
+      vertical-align: middle !important;
+  }
+
   /* Top bar */
-  body > .main, div.block-container, main[role="main"]{ padding-bottom:76px !important; padding-top:0 !important; }
-  #top-progress{ position:fixed; bottom:0; left:0; right:0; top:auto; height:68px; z-index:9999; pointer-events:none; }
+  body > .main, div.block-container, main[role="main"]{ padding-top:76px !important; }
+  #top-progress{ position:fixed; top:0; left:0; right:0; height:68px; z-index:9999; pointer-events:none; }
   #top-progress .wrap{
     height:100%; display:flex; align-items:center; gap:16px; padding:0 20px;
     background:rgba(10,16,32,.72); backdrop-filter:blur(6px);
-    border-top:1px solid var(--ring); box-shadow:0 -8px 24px rgba(0,0,0,.4);
+    border-bottom:1px solid var(--ring); box-shadow:0 8px 24px rgba(0,0,0,.4);
   }
   #top-progress .label{ color:var(--text-0); font-weight:700; min-width:220px; letter-spacing:.2px; pointer-events:auto; }
   #top-progress .bar{ flex:1; height:10px; background:rgba(255,255,255,.06); border-radius:999px; overflow:hidden; }
@@ -75,94 +79,8 @@ st.markdown(
   .conf-ind{ position:absolute; top:0; left:0; height:100%; background:rgba(255,255,255,.25); border-right:3px solid #fff; box-shadow:0 0 16px rgba(255,255,255,.35); }
   .muted{ color:var(--text-2); }
 
-  /* Buttons（一般） */
+  /* Buttons */
   .stButton>button{ border-radius:10px !important; border:1px solid var(--ring) !important; background:rgba(255,255,255,.05) !important; color:var(--text-0) !important; }
-
-  /* === Sidebar Links 白色化 === */
-  [data-testid="stSidebar"] a,
-  [data-testid="stSidebar"] a span,
-  [data-testid="stSidebar"] a > div,
-  [data-testid="stSidebar"] button[role="button"],
-  [data-testid="stSidebar"] button[role="button"] span,
-  [data-testid="stSidebar"] [role="navigation"] a,
-  [data-testid="stSidebar"] [role="navigation"] button {
-      color: #ffffff !important;
-      fill: #ffffff !important;
-      opacity: 1 !important;
-  }
-  [data-testid="stSidebar"] button[role="button"][aria-current="true"],
-  [data-testid="stSidebar"] a[aria-current="true"] {
-      color: #ffffff !important;
-      font-weight: 700 !important;
-  }
-  [data-testid="stSidebar"] svg {
-      fill: #ffffff !important;
-      color: #ffffff !important;
-  }
-
-/* === 強化 Submit Decision hover 動畫 (確保匹配最新 Streamlit 結構) === */
-.stButton button[data-testid="baseButton-primary"],
-.stButton > button[kind="primary"],
-button[kind="primary"],
-button[data-testid="baseButton-primary"] {
-  display: inline-block;
-  height: 64px !important;
-  font-size: 1.2rem !important;
-  font-weight: 700 !important;
-  border-radius: 10px !important;
-  color: #fff !important;
-  background: linear-gradient(90deg, var(--brand), #7fa1ff) !important;
-  border: 1px solid var(--ring) !important;
-  box-shadow: 0 0 16px rgba(77,124,255,.45) !important;
-  transition: all 0.25s ease !important;
-  transform-origin: center center;
-  will-change: transform, box-shadow, filter;
-}
-
-    /* hover 動畫（加 !important 且包含不同層級） */
-    .stButton button[data-testid="baseButton-primary"]:hover,
-    .stButton > button[kind="primary"]:hover,
-    button[kind="primary"]:hover,
-    button[data-testid="baseButton-primary"]:hover {
-    transform: scale(1.05) translateZ(0) !important;
-    box-shadow: 0 0 24px rgba(77,124,255,.75), 0 6px 24px rgba(0,0,0,.35) !important;
-    filter: brightness(1.05) saturate(1.08) !important;
-    }
-
-    /* active 點擊回饋 */
-    .stButton button[data-testid="baseButton-primary"]:active,
-    .stButton > button[kind="primary"]:active,
-    button[kind="primary"]:active,
-    button[data-testid="baseButton-primary"]:active {
-    transform: scale(0.98) translateY(1px) !important;
-    box-shadow: 0 0 18px rgba(77,124,255,.5) inset !important;
-    filter: brightness(0.9) !important;
-    }
-
-    /* 統一 Submit 高度與狀態，不因 primary/secondary 變動 */
-    .submit-wide .stButton > button {
-    height:72px !important;
-    min-height:72px !important;
-    line-height:72px !important;
-    width:100% !important;
-    font-size:1.15rem !important;
-    font-weight:800 !important;
-    border-radius:14px !important;
-    border:1px solid var(--ring) !important;
-    box-shadow:none !important;        /* 避免陰影造成視覺高度變化 */
-    transform:none !important;         /* 避免 scale 造成跳動 */
-    filter:none !important;
-    }
-
-    /* Submit 的 hover/active 也不要放大 */
-    .submit-wide .stButton > button:hover,
-    .submit-wide .stButton > button:active,
-    .submit-wide .stButton > button:focus {
-    transform:none !important;
-    box-shadow:0 4px 12px rgba(0,0,0,.18) !important;
-    filter:brightness(1.02) !important;
-    }
-    
 </style>
 """,
     unsafe_allow_html=True,
@@ -173,7 +91,7 @@ if "candidate_index" not in st.session_state:
     st.session_state.candidate_index = 0
 if "candidates" not in st.session_state:
     st.session_state.candidates = []
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(7)
     for i in range(10):
         t = np.linspace(0, 50, 500)
         f = 1 + rng.normal(0, 0.002, 500)
@@ -185,7 +103,7 @@ if "candidates" not in st.session_state:
             events.append(float(tt))
         st.session_state.candidates.append(
             {
-                "id": f"TIC-{200000+rng.integers(0,99999)}",
+                "id": f"TIC-{200000+i}",
                 "time": t,
                 "flux": f,
                 "period": float(period),
@@ -194,7 +112,7 @@ if "candidates" not in st.session_state:
                 "snr": float(rng.uniform(10, 50)),
                 "radius_ratio": float(rng.uniform(0.05, 0.15)),
                 "ai_confidence": float(rng.uniform(0.5, 0.95)),
-                "transit_times": events,
+                "transit_times": events[:3],
                 "color_index": float(rng.uniform(0.5, 1.5)),
                 "effective_temp": float(rng.uniform(4000, 7000)),
             }
@@ -286,20 +204,13 @@ def render_vetting():
     candidates = st.session_state.candidates
     idx = st.session_state.candidate_index
     total = len(candidates)
-
-    # cap display values so they never exceed total / 100%
-    if total:
-        pct = min(int(((idx + 1) / total) * 100), 100)
-        display_num = min(idx + 1, total)
-    else:
-        pct = 0
-        display_num = 0
+    pct = int(((idx + 1) / total) * 100) if total else 0
 
     st.markdown(
         f"""
         <div id="top-progress">
           <div class="wrap">
-            <div class="label">Candidate {display_num} / {total} — {pct}%</div>
+            <div class="label">Candidate {idx+1} / {total} — {pct}%</div>
             <div class="bar"><i style="width:{pct}%;"></i></div>
           </div>
         </div>
@@ -336,6 +247,7 @@ def render_vetting():
         return
 
     cur = candidates[idx]
+    st.progress((idx + 1) / total, text=f"Candidate {idx+1} of {total}")
 
     st.markdown(
         f"""
@@ -382,137 +294,51 @@ def render_vetting():
         fig_zoom = create_transit_zoom(cur, transit_num, height=520)
         st.plotly_chart(fig_zoom, use_container_width=True, config={"displayModeBar": False})
 
+    # === Decision ===
+    st.subheader("Vetting Decision")
+    decision = st.radio(
+        "Select a label",
+        options=["False Positive", "Planet Candidate", "Confirmed Planet"],
+        horizontal=True,
+        key=f"decision_{idx}",
+    )
+
+    col_submit, col_prev, col_skip, col_reset = st.columns([2, 1, 1, 1])
+    with col_submit:
+        if st.button("Submit Decision", use_container_width=True):
+            mapping = {
+                "False Positive": "FALSE_POSITIVE",
+                "Planet Candidate": "CANDIDATE",
+                "Confirmed Planet": "CONFIRMED",
+            }
+            st.session_state.labels.append(mapping[decision])
+            st.session_state.candidate_index += 1
+            st.toast(f"Recorded: {decision}")
+            time.sleep(0.1)
+            st.rerun()
+    with col_prev:
+        if st.button("Previous", use_container_width=True, disabled=(idx == 0)):
+            st.session_state.candidate_index = max(0, idx - 1)
+            if st.session_state.labels:
+                st.session_state.labels.pop()
+            st.rerun()
+    with col_skip:
+        if st.button("Skip", use_container_width=True):
+            st.session_state.candidate_index += 1
+            st.rerun()
+    with col_reset:
+        if st.button("Reset Demo Data", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+
+# ========== Run ==========
 render_vetting()
 
-# === Decision ===
-st.markdown("---")
-st.subheader("Vetting Decision")
-
-idx = st.session_state.get("candidate_index", 0)
-
-labels = ["False Positive", "Planet Candidate", "Confirmed Planet"]
-mapping = {"False Positive": "FALSE_POSITIVE",
-           "Planet Candidate": "CANDIDATE",
-           "Confirmed Planet": "CONFIRMED"}
-
-
-
-sel_key = f"selected_label_{idx}"
-if sel_key not in st.session_state:
-    st.session_state[sel_key] = None
-
-# --- STEP 1: 選擇列（單行） ---
 st.markdown(
-    "<div style='color:var(--text-0); font-size:1.05rem; font-weight:700; margin-bottom:6px;'>STEP 1: Select your vetting decision below</div>",
-    unsafe_allow_html=True
-)
-
-# 大按鈕樣式（只作用這一組）
-st.markdown("""
-<style>
-.decision-buttons .stButton>button{
-  height:72px !important;
-  min-height:72px !important;
-  font-size:1.5rem !important;      /* 文字變大 */
-  font-weight:800 !important;
-  border-radius:14px !important;
-  padding:12px 18px !important;
-  color:#ffffff !important;          /* 文字白色 */
-  border:1px solid var(--ring) !important;
-}
-/* 三顆按鈕的容器與間距 */
-.decision-buttons .row{
-  display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;
-}
-@media (max-width: 980px){
-  .decision-buttons .row{ grid-template-columns:1fr; }
-}
-</style>
-""", unsafe_allow_html=True)
-
-# 以三顆大按鈕模擬 radio（單選）
-st.markdown("<div class='decision-buttons'><div class='row'>", unsafe_allow_html=True)
-cols = st.columns(3)
-for i, (col, opt) in enumerate(zip(cols, labels)):
-    with col:
-        is_sel = (st.session_state.get(sel_key) == opt)
-        # 選到的那顆顯示為 primary（藍色），其餘 secondary
-        if st.button(
-            opt,
-            key=f"decision_opt_{idx}_{i}",
-            use_container_width=True,
-            type=("primary" if is_sel else "secondary"),
-        ):
-            st.session_state[sel_key] = opt
-st.markdown("</div></div>", unsafe_allow_html=True)
-
-# 讓後面 Step 2 讀到最新選擇
-chosen = st.session_state.get(sel_key)
-
-
-# --- STEP 2: Submit 列（單行） ---
-st.markdown("<div style='color:var(--text-0); font-size:1.05rem; font-weight:700; margin-bottom:6px;'>STEP 2: Submit your decision</div>", unsafe_allow_html=True)
-st.markdown("<div class='submit-wide'>", unsafe_allow_html=True)
-
-# read chosen from session_state to ensure consistent behavior after rerun
-chosen = st.session_state.get(sel_key)
-submit_type = "primary" if chosen is not None else "secondary"
-
-# single Submit button (unique key) — removed duplicate earlier submit button to avoid double-click issues
-if st.button(
-    "Submit Decision",
-    type=submit_type,
-    use_container_width=True,
-    key=f"submit_btn_{idx}_step2",
-    disabled=(chosen is None),
-):
-    # guard just in case
-    if chosen is not None:
-        st.session_state.labels.append(mapping[chosen])
-        st.session_state.candidate_index += 1
-        # clear the next candidate's selected key so radio starts empty for the next candidate
-        next_key = f"selected_label_{st.session_state.candidate_index}"
-        st.session_state.pop(next_key, None)
-        st.toast(f"Recorded: {chosen}")
-        time.sleep(0.1)
-        st.rerun()
-
-st.markdown("</div>", unsafe_allow_html=True)
-st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
-
-# --- Navigation Buttons（單行） ---
-st.markdown("<div style='color:var(--text-0); font-size:1.05rem; font-weight:700; margin-bottom:6px;'>You can navigate between candidates!</div>", unsafe_allow_html=True)
-st.markdown("<div class='action-row'>", unsafe_allow_html=True)
-col_prev, col_skip, col_reset = st.columns([1, 1, 1])
-with col_prev:
-    if st.button("Previous", use_container_width=True, disabled=(idx == 0), key=f"prev_{idx}"):
-        st.session_state.candidate_index = max(0, idx - 1)
-        # remove last label if exist to keep labels in sync
-        if st.session_state.labels:
-            st.session_state.labels.pop()
-        # remove selected key for the (now current) candidate so radio shows correct state
-        prev_key = f"selected_label_{st.session_state.candidate_index}"
-        st.session_state.pop(prev_key, None)
-        st.rerun()
-with col_skip:
-    if st.button("Skip", use_container_width=True, key=f"skip_{idx}"):
-        st.session_state.candidate_index += 1
-        next_key = f"selected_label_{st.session_state.candidate_index}"
-        st.session_state.pop(next_key, None)
-        st.rerun()
-with col_reset:
-    if st.button("Reset Demo Data", use_container_width=True, key=f"reset_{idx}"):
-        st.session_state.clear()
-        st.rerun()
-st.markdown("</div>", unsafe_allow_html=True)
-
-
-st.markdown(
-    
     """
 <div style='text-align:center;color:var(--text-2);padding:18px 0;'>
   <div style='font-size:.9rem;opacity:.7;'>Exoplanet Hunter — Vetting Suite</div>
-  <div style='font-size:.8rem;opacity:.5;'>Build v2.3.1 · Enterprise Edition</div>
+  <div style='font-size:.8rem;opacity:.5;'>Build v2.3.2 · Enterprise Edition</div>
 </div>
 """,
     unsafe_allow_html=True,

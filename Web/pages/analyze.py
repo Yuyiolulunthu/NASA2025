@@ -38,10 +38,7 @@ MODEL_PATH = os.path.join(MODELS_DIR, 'new_model_20251004_211436.pkl')
 def apply_premium_theme():
     st.markdown("""
     <style>
-        /* Background */
         .stApp { background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1729 100%); }
-
-        /* Title */
         .main-title{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
@@ -49,135 +46,56 @@ def apply_premium_theme():
         }
         .subtitle{ text-align:center; color:#fff; font-size:1.4rem; margin-bottom:2rem; font-weight:500; }
 
-        /* Cards */
         .analysis-card{
             background: linear-gradient(135deg, rgba(22,33,62,.7), rgba(15,52,96,.7));
             border:2px solid rgba(102,126,234,.3); border-radius:20px; padding:2rem; margin:1.5rem 0;
             box-shadow:0 4px 16px rgba(31,38,135,.3); backdrop-filter: blur(10px); transition:.3s;
         }
-        .analysis-card:hover{
-            transform: translateY(-3px);
-            background: linear-gradient(135deg, rgba(22,33,62,.95), rgba(15,52,96,.95));
-            border-color: rgba(102,126,234,.6); box-shadow:0 12px 40px rgba(102,126,234,.6);
-        }
+        .analysis-card:hover{ transform: translateY(-3px); background: linear-gradient(135deg, rgba(22,33,62,.95), rgba(15,52,96,.95)); border-color: rgba(102,126,234,.6); box-shadow:0 12px 40px rgba(102,126,234,.6); }
         .analysis-card h3,.analysis-card h4{ color:#fff !important; font-weight:700; font-size:1.4rem; }
         .analysis-card p{ color:#d0d0d0 !important; font-size:1.1rem !important; }
-        .analysis-card:hover p{ color:#fff !important; }
-        .analysis-card strong{ color:#fff !important; }
 
-        /* Metric cards */
         .metric-card{
             background: linear-gradient(135deg, rgba(102,126,234,.15), rgba(118,75,162,.15));
             border:2px solid rgba(102,126,234,.4); border-radius:15px; padding:2rem 1.5rem; text-align:center; transition:.3s;
         }
-        .metric-card:hover{ transform: translateY(-5px); background: linear-gradient(135deg, rgba(102,126,234,.4), rgba(118,75,162,.4));
-            box-shadow:0 12px 24px rgba(102,126,234,.5); border-color: rgba(102,126,234,.9); }
         .metric-value{ font-size:2.8rem; font-weight:700; color:#4facfe; margin:.8rem 0; }
-        .metric-card:hover .metric-value{ color:#00d4ff; text-shadow:0 0 10px rgba(0,212,255,.5); }
         .metric-label{ color:#d0d0d0; font-size:1.15rem; text-transform:uppercase; letter-spacing:1px; font-weight:700; }
-        .metric-card:hover .metric-label{ color:#fff; }
 
-        /* Prediction badge (legacy, kept for non-rs sections) */
-        .prediction-badge{ display:inline-block; padding:2rem 3.5rem; border-radius:25px; font-weight:800; font-size:2.2rem; margin:1.5rem 0; text-align:center; }
-        .planet-detected{ background: linear-gradient(135deg,#48bb78 0%,#38a169 100%); color:#fff; box-shadow:0 8px 32px rgba(72,187,120,.6); border:3px solid #68d391; }
-        .not-planet{ background: linear-gradient(135deg,#fc8181 0%,#f56565 100%); color:#fff; box-shadow:0 8px 32px rgba(245,101,101,.6); border:3px solid #feb2b2; }
-
-        /* Buttons */
         .stButton > button{
             background: linear-gradient(135deg, rgba(102,126,234,.8) 0%, rgba(118,75,162,.8) 100%) !important;
             color:#fff !important; border:2px solid rgba(102,126,234,.5) !important; border-radius:15px !important;
             padding:1.2rem 3rem !important; font-size:1.2rem !important; font-weight:600 !important;
             box-shadow:0 4px 15px rgba(102,126,234,.3) !important; transition:.3s !important; width:100%;
         }
-        .stButton > button:hover{ background: linear-gradient(135deg,#667eea 0%,#764ba2 100%) !important; border-color:rgba(102,126,234,.9) !important; transform:translateY(-3px) !important; box-shadow:0 8px 25px rgba(102,126,234,.6) !important; }
 
-        /* Progress */
-        .stProgress > div > div > div > div{ background: linear-gradient(90deg,#667eea 0%,#764ba2 100%); }
-
-        /* Typography defaults */
-        .stMarkdown,.stText,p,span,div{ color:#e0e0e0 !important; font-size:1.1rem; }
-        h1,h2,h3,h4{ color:#fff !important; }
-        h2{ font-size:2rem !important; } h3{ font-size:1.6rem !important; } h4{ font-size:1.3rem !important; }
-        label{ color:#d0d0d0 !important; font-size:1.15rem !important; font-weight:600 !important; }
-
-        /* Alerts */
-        .stSuccess{ background:rgba(72,187,120,.3) !important; border:2px solid #48bb78 !important; color:#fff !important; }
-        .stSuccess *{ color:#fff !important; }
-        .stWarning{ background:rgba(237,137,54,.3) !important; border:2px solid #ed8936 !important; color:#fff !important; }
-        .stWarning *{ color:#fff !important; }
-        .stError{ background:rgba(245,101,101,.3) !important; border:2px solid #f56565 !important; color:#fff !important; }
-        .stError *{ color:#fff !important; }
-        .stInfo{ background:rgba(66,153,225,.3) !important; border:2px solid #4299e1 !important; color:#fff !important; }
-        .stInfo *{ color:#fff !important; }
-
-        /* Sidebar */
-        [data-testid="stSidebar"]{ background-color: rgba(10,14,39,.95) !important; }
-        [data-testid="stSidebar"] .stMarkdown{ color:#d0d0d0 !important; }
-        [data-testid="stSidebar"] h1,[data-testid="stSidebar"] h2,[data-testid="stSidebar"] h3,[data-testid="stSidebar"] h4{ color:#fff !important; }
-
-        /* File Uploader (base look) */
-        .stFileUploader{
-            border:3px dashed rgba(102,126,234,.3) !important; border-radius:20px !important; padding:2rem !important; transition:.3s !important;
-            background: rgba(255,255,255,.92) !important;
+        /* Results-scoped styles */
+        .rs-section { margin: 0.5rem 0 2rem; }
+        .rs-title { font-size: 1.6rem; font-weight: 800; margin: .25rem 0 .75rem; color: #fff; }
+        .rs-badge {
+          display:flex; align-items:center; justify-content:center;
+          padding: 1.1rem 1.6rem; border-radius: 18px; font-weight: 900; font-size: 1.2rem;
+          border: 2px solid rgba(255,255,255,.25); text-transform: uppercase; letter-spacing: .5px;
         }
-        .stFileUploader:hover{ border-color: rgba(102,126,234,.7) !important; background: rgba(255,255,255,.98) !important; }
-
-        /* ===== st.dataframe ===== */
-        table.dataframe{
-          color:#fff !important;
-          font-size: 1.1rem !important;
-          background: rgba(15,25,50,.6) !important;
-          border-radius: 12px; overflow: hidden;
+        .rs-badge.ok  { background: linear-gradient(135deg,#48bb78 0%,#38a169 100%); border-color:#68d391; box-shadow:0 8px 24px rgba(72,187,120,.35); }
+        .rs-badge.no  { background: linear-gradient(135deg,#fc8181 0%,#f56565 100%); border-color:#feb2b2; box-shadow:0 8px 24px rgba(245,101,101,.35); }
+        .rs-grid {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 14px; margin: .5rem 0 1.25rem;
         }
-        table.dataframe thead th{
-          background: rgba(102,126,234,.85) !important;
-          color:#fff !important; font-weight:700 !important; font-size: 1.1rem !important; text-align: center !important;
+        .rs-card {
+          background: linear-gradient(135deg, rgba(102,126,234,.15), rgba(118,75,162,.15));
+          border: 1px solid rgba(102,126,234,.35);
+          border-radius: 14px; padding: 14px 16px; text-align: center;
+          box-shadow: 0 4px 14px rgba(16,24,48,.35);
         }
-        table.dataframe tbody td{
-          color:#fff !important; background: rgba(15,25,50,.4) !important; text-align: center !important; padding: 10px 8px !important;
-        }
-        table.dataframe tbody tr:hover td{ background: rgba(102,126,234,.3) !important; }
+        .rs-card .lbl { color:#d7dbee; font-size: .95rem; font-weight: 700; letter-spacing:.4px; text-transform: uppercase; }
+        .rs-card .val { color:#4facfe; font-size: 1.9rem; font-weight: 800; margin-top: .25rem; }
+        .rs-divider { height:1px; background: linear-gradient(90deg, transparent, rgba(102,126,234,.5), transparent); margin: 1.25rem 0; border:0; }
 
-        /* Select / Inputs */
-        .stSelectbox > div > div{ background:rgba(15,25,50,.6) !important; border:2px solid rgba(102,126,234,.3) !important; color:#d0d0d0 !important; }
-        .stSelectbox > div > div:hover, .stSelectbox > div > div:focus-within{ background:rgba(15,25,50,.9) !important; border-color:rgba(102,126,234,.6) !important; color:#fff !important; }
-        .stTextInput input{ background:rgba(15,25,50,.6) !important; border:2px solid rgba(102,126,234,.3) !important; color:#d0d0d0 !important; }
-        .stTextInput input:hover, .stTextInput input:focus{ background:rgba(15,25,50,.9) !important; border-color:rgba(102,126,234,.6) !important; color:#fff !important; }
-
-        /* Metrics */
-        .stMetric{ background:rgba(15,25,50,.2) !important; padding:1rem !important; border-radius:10px !important; border:1px solid rgba(102,126,234,.2) !important; }
-        [data-testid="stMetricValue"]{ font-size:1.9rem !important; font-weight:700 !important; color:#4facfe !important; }
-        [data-testid="stMetricLabel"]{ color:#d0d0d0 !important; font-size:1.1rem !important; font-weight:600 !important; }
-
-        /* Expander */
-        .streamlit-expanderHeader{ background:rgba(15,25,50,.6) !important; border:2px solid rgba(102,126,234,.4) !important; border-radius:10px !important; font-weight:700 !important; font-size:1.25rem !important; color:#e0e0e0 !important; padding:1rem !important; }
-        .streamlit-expanderHeader:hover{ border-color:rgba(102,126,234,.7) !important; background:rgba(102,126,234,.3) !important; color:#fff !important; }
-        .streamlit-expanderHeader[aria-expanded="true"]{ background:rgba(102,126,234,.4) !important; border-color:rgba(102,126,234,.8) !important; color:#fff !important; }
-        .streamlit-expanderContent{ background:rgba(15,25,50,.4) !important; border:1px solid rgba(102,126,234,.3) !important; border-top:none !important; padding:1.5rem !important; }
-        .streamlit-expanderContent *{ color:#fff !important; }
-
-        /* Links + code */
-        a{ color:#00d4ff !important; } a:hover{ color:#4facfe !important; }
-        code{ color:#00f5ff !important; background:rgba(0,20,40,.8) !important; padding:.2rem .5rem !important; border-radius:5px !important; }
-        pre{ background:rgba(0,20,40,.8) !important; border:1px solid rgba(102,126,234,.3) !important; border-radius:10px !important; padding:1rem !important; }
-        .stSpinner > div{ border-top-color:#00d4ff !important; }
-
-        /* Feature blocks equal height + vertical center */
-        .feature-card{
-          display:flex; flex-direction:column; justify-content:center; align-items:center;
-          text-align:center; min-height:180px; gap:.5rem;
-        }
-        .feature-card h3{ margin:0 0 .25rem 0 !important; line-height:1.25 !important; }
-        .feature-card p{ margin:0 !important; }
-
-        /* File uploader -> black text (overrides above) */
+        /* Uploader readability */
+        .stFileUploader{ border:3px dashed rgba(102,126,234,.3) !important; border-radius:20px !important; padding:2rem !important; background: rgba(255,255,255,.92) !important; }
         .stFileUploader, .stFileUploader *{ color:#111 !important; }
-        .stFileUploader label{ color:#111 !important; }
-        .stFileUploader [data-testid="stFileUploaderDropzone"] p,
-        .stFileUploader [data-testid="stFileUploaderDropzone"] span{ color:#111 !important; opacity:1 !important; }
-        .stFileUploader button{
-            color:#111 !important; background:#fff !important; border:1px solid #cbd5e1 !important;
-        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -341,8 +259,7 @@ def create_visualization_plot(df, features, extra_features):
         slope, intercept = 0.0, float(np.mean(flux)) if len(flux) else 0.0
     detrended = flux - (slope*tn + intercept)
     fig.add_trace(go.Scatter(x=df['time'], y=detrended, mode='lines', name='Detrended Signal',
-                             line=dict(color='#f093fb', width=2.5),
-                             hovertemplate='<b>Time:</b> %{x:.4f}<br><b>Detrended:</b> %{y:.8f}<extra></extra>'),
+                             line=dict(color='#f093fb', width=2.5)),
                   row=2, col=1)
     fig.add_hline(y=0, line_dash="dash", line_color="#00f5ff", line_width=2, row=2, col=1)
 
@@ -357,8 +274,7 @@ def create_visualization_plot(df, features, extra_features):
                       abs(extra_features.get('snr',0))]
     colors = ['#00f5ff','#667eea','#764ba2','#f093fb','#00ff88','#ffbb00','#ff0080','#00d4aa']
     fig.add_trace(go.Bar(x=feature_names, y=feature_values, name='Feature Values',
-                         marker=dict(color=colors, opacity=.8, line=dict(color='#fff', width=2)),
-                         hovertemplate='<b>%{x}:</b> %{y:.4f}<extra></extra>'),
+                         marker=dict(color=colors, opacity=.8, line=dict(color='#fff', width=2))),
                   row=2, col=2)
 
     window = max(5, len(flux)//20) if len(flux) >= 5 else 5
@@ -381,11 +297,9 @@ def create_visualization_plot(df, features, extra_features):
                   row=3, col=2)
 
     fig.update_layout(height=1200, showlegend=True, paper_bgcolor='rgba(10,14,39,.95)', plot_bgcolor='rgba(15,25,50,.9)',
-                      font=dict(color='#e0f0ff', size=13, family='Rajdhani'),
-                      hovermode='closest',
-                      legend=dict(bgcolor='rgba(10,20,40,.8)', bordercolor='#00f5ff', borderwidth=2, font=dict(size=12)))
-    fig.update_xaxes(gridcolor='rgba(0,245,255,.2)', gridwidth=1, showline=True, linewidth=2, linecolor='#00f5ff', title_font_color='#00f5ff', tickfont_color='#e0f0ff')
-    fig.update_yaxes(gridcolor='rgba(102,126,234,.2)', gridwidth=1, showline=True, linewidth=2, linecolor='#667eea', title_font_color='#667eea', tickfont_color='#e0f0ff')
+                      font=dict(color='#e0f0ff', size=13, family='Rajdhani'))
+    fig.update_xaxes(gridcolor='rgba(0,245,255,.2)', gridwidth=1, showline=True, linewidth=2, linecolor='#00f5ff')
+    fig.update_yaxes(gridcolor='rgba(102,126,234,.2)', gridwidth=1, showline=True, linewidth=2, linecolor='#667eea')
     for a in fig['layout']['annotations']:
         a['font'] = dict(size=16, color='#00f5ff', family='Orbitron', weight='bold')
     return fig
@@ -475,41 +389,7 @@ if uploaded_file is not None:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # ---------- Scoped Results UI CSS (rs- classes) ----------
-        st.markdown("""
-        <style>
-        .rs-section { margin: 0.5rem 0 2rem; }
-        .rs-title { font-size: 1.6rem; font-weight: 800; margin: .25rem 0 .75rem; color: #fff; }
-        .rs-badge {
-          display:flex; align-items:center; justify-content:center;
-          padding: 1.1rem 1.6rem; border-radius: 18px; font-weight: 900; font-size: 1.4rem;
-          border: 2px solid rgba(255,255,255,.25); text-transform: uppercase; letter-spacing: .5px;
-        }
-        .rs-badge.ok  { background: linear-gradient(135deg,#48bb78 0%,#38a169 100%); border-color:#68d391; box-shadow:0 8px 24px rgba(72,187,120,.35); }
-        .rs-badge.no  { background: linear-gradient(135deg,#fc8181 0%,#f56565 100%); border-color:#feb2b2; box-shadow:0 8px 24px rgba(245,101,101,.35); }
-        .rs-grid {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-          gap: 14px; margin: .5rem 0 1.25rem;
-        }
-        .rs-card {
-          background: linear-gradient(135deg, rgba(102,126,234,.15), rgba(118,75,162,.15));
-          border: 1px solid rgba(102,126,234,.35);
-          border-radius: 14px; padding: 14px 16px; text-align: center;
-          box-shadow: 0 4px 14px rgba(16,24,48,.35);
-        }
-        .rs-card .lbl { color:#d7dbee; font-size: .95rem; font-weight: 700; letter-spacing:.4px; text-transform: uppercase; }
-        .rs-card .val { color:#4facfe; font-size: 1.9rem; font-weight: 800; margin-top: .25rem; }
-        .rs-card small { display:block; margin-top:.35rem; opacity:.9; color:#c7d2fe; }
-        .rs-divider { height:1px; background: linear-gradient(90deg, transparent, rgba(102,126,234,.5), transparent); margin: 1.25rem 0; border:0; }
-        .rs-note {
-          background: rgba(15,25,50,.35); border: 1px solid rgba(102,126,234,.35); border-radius: 12px;
-          padding: 14px 16px;
-        }
-        .rs-center { display:flex; align-items:center; justify-content:center; }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # ---------- Analyze Button (centered) ----------
+        # ---------- Analyze Button ----------
         a1,a2,a3 = st.columns([1,2,1])
         with a2:
             run_clicked = auto_analyze or st.button("Run Analysis", use_container_width=True, type="primary")
@@ -545,7 +425,7 @@ if uploaded_file is not None:
                 is_planet = results['prediction'] == 'PLANET'
                 badge_cls = "ok" if is_planet else "no"
                 label = "PLANET DETECTED" if is_planet else "NO PLANET"
-                st.markdown(f'<div class="rs-center"><div class="rs-badge {badge_cls}">{label}</div></div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="rs-badge {badge_cls}">{label}</div>', unsafe_allow_html=True)
 
                 # --- Classification Metrics ---
                 st.markdown('<div class="rs-section rs-title">Classification Metrics</div>', unsafe_allow_html=True)
@@ -558,12 +438,26 @@ if uploaded_file is not None:
                 </div>
                 """, unsafe_allow_html=True)
 
+                # --- NEW: Planet Prob 範圍調整（只影響顯示/篩選，不改 prediction） ---
+                st.markdown('<div class="rs-section rs-title">Planet Probability Range</div>', unsafe_allow_html=True)
+                pp_range = st.slider(
+                    "Keep result when Planet Probability is within:",
+                    min_value=0.0, max_value=1.0,
+                    value=(0.50, 1.00), step=0.01,
+                    key="pp_range_slider"
+                )
+                p = float(results['planet_probability'])
+                in_range = (pp_range[0] <= p <= pp_range[1])
+                status_text = "IN RANGE" if in_range else "OUT OF RANGE"
+                status_cls = "ok" if in_range else "no"
+                st.markdown(f'<div class="rs-badge {status_cls}">{status_text}: {p:.1%}</div>', unsafe_allow_html=True)
+
                 # --- Model / Run Info ---
                 st.markdown(f"""
                 <div class="rs-grid">
                   <div class="rs-card"><div class="lbl">Model Type</div><div class="val">{results['model_type']}</div></div>
                   <div class="rs-card"><div class="lbl">Version</div><div class="val">{results['model_version']}</div></div>
-                  <div class="rs-card"><div class="lbl">Dataset</div><div class="val">23,289</div><small>Training samples</small></div>
+                  <div class="rs-card"><div class="lbl">Dataset</div><div class="val">23,289</div></div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -610,7 +504,6 @@ if uploaded_file is not None:
                         st.markdown("<div class='analysis-card'><h3>Statistical Tests</h3>", unsafe_allow_html=True)
                         from scipy.stats import normaltest
                         try:
-                            # normaltest requires n >= 8; catch otherwise
                             if len(df_processed['flux']) >= 8:
                                 _, pval = normaltest(df_processed['flux'])
                             else:
@@ -648,22 +541,10 @@ if uploaded_file is not None:
                 </div>
                 """, unsafe_allow_html=True)
 
-                st.markdown('<div class="rs-section rs-title">Recommendations</div>', unsafe_allow_html=True)
-                rec = []
-                if len(df_processed) < 50: rec.append("• Increase data points to at least 100 for better accuracy.")
-                if snr < 10: rec.append("• Improve signal quality through better instrumentation or longer exposure.")
-                if q < 60: rec.append("• Apply preprocessing (detrending, outlier removal) to improve results.")
-                if results['confidence'] < 0.70: rec.append("• Acquire additional observations for confirmation.")
-                if is_planet and results['confidence'] > 0.85:
-                    rec.append("• Strong candidate — schedule follow-up spectroscopy.")
-                    rec.append("• Document parameters for publication.")
-                if rec:
-                    st.markdown("<div class='rs-note'>" + "<br>".join(rec) + "</div>", unsafe_allow_html=True)
-                else:
-                    st.success("No additional recommendations — data quality is excellent.")
-
                 st.markdown('<div class="rs-section rs-title">Export Analysis</div>', unsafe_allow_html=True)
-                full = {**results, **features, **extra}
+                full = {**results, **features, **extra,
+                        "pp_range_min": pp_range[0], "pp_range_max": pp_range[1],
+                        "pp_in_range": in_range}
                 csv = pd.DataFrame([full]).to_csv(index=False)
                 ts = time.strftime('%Y%m%d_%H%M%S')
                 st.download_button(
