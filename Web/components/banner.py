@@ -98,7 +98,7 @@ div.block-container {{ padding-top: 64px !important; }}
   z-index: 9998;
 }}
 #exo-toggle:checked ~ .exo-menu {{
-  max-height: 360px;
+  max-height: 420px;
   padding: 10px 14px;
   opacity: 1;
   transform: translateY(0);
@@ -192,6 +192,17 @@ div.block-container {{ padding-top: 64px !important; }}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
             </span>
             Try our analysis demo
+          </button>
+        </form>
+      </li>
+      <li data-path="/fits_converter">
+        <form class="exo-link-form" method="get" action="/fits_converter">
+          <button class="exo-link-btn" type="submit">
+            <span class="exo-ico">
+              <!-- 望遠鏡/轉換 圖示 -->
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M20.38 8.57l-1.23 1.85a8 8 0 0 1-.22 7.58H5.07A8 8 0 0 1 15.58 6.85l1.85-1.23A10 10 0 0 0 3.35 19a2 2 0 0 0 1.72 1h13.85a2 2 0 0 0 1.74-1 10 10 0 0 0-.27-10.44z"/><path fill="currentColor" d="M10.59 15.41a2 2 0 0 0 2.83 0l5.66-8.49-8.49 5.66a2 2 0 0 0 0 2.83z"/></svg>
+            </span>
+            FITS Converter
           </button>
         </form>
       </li>
