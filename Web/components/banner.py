@@ -42,6 +42,23 @@ div.block-container {{ padding-top: 64px !important; }}
   z-index: 9999;
 }}
 
+/* 左側 Home 按鈕（新增樣式） */
+.exo-left-form {{
+  position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+  margin: 0;
+}}
+.exo-left-btn {{
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 34px; border-radius: 10px;
+  border: 1px solid rgba(99, 102, 241, .18);
+  background: transparent; color: #e5e7eb;
+  cursor: pointer; padding: 0;
+  transition: background .18s, color .18s, border-color .18s;
+}}
+.exo-left-btn:hover {{ background: #e5e7eb; color: #111827; border-color: rgba(99,102,241,.6); }}
+.exo-left-btn:focus-visible {{ outline: 2px solid #9aa7ff; outline-offset: 2px; }}
+.exo-home-ico {{ width: 18px; height: 18px; display: block; }}
+
 /* 中央：Logo + Title（用 form+button，避免新分頁） */
 .exo-center-form {{
   position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
@@ -54,29 +71,29 @@ div.block-container {{ padding-top: 64px !important; }}
 .exo-center-btn img {{ width: 32px; height: 32px; display: block; }}
 .exo-center-btn span {{
   color:#fff; font-weight: 900; letter-spacing:.02em;
-  font-size: 1.42rem; line-height: 1; /* 縮小文字下方空隙 */
-  transform: translateY(1px);        /* 微調視覺置中 */
+  font-size: 1.42rem; line-height: 1;
+  transform: translateY(1px);
 }}
 
 /* 右上三槓：預設黑底白槓；hover 白底黑槓（顏色互換） */
 #exo-toggle {{ display: none; }}
 .exo-btn {{
-  position:absolute; right:18px; top:50%; transform: translateY(-50%);
-  width:44px; height:34px; display:flex; align-items:center; justify-content:center;
-  border:1px solid rgba(99,102,241,.35);
-  border-radius:10px; cursor:pointer;
-  background:{bg}; color:#e5e7eb;
-  transition: background .2s,color .2s,border-color .2s;
+  position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 34px; display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(99, 102, 241, .35);
+  border-radius: 10px; cursor: pointer;
+  background: {bg}; color: #e5e7eb;
+  transition: background .2s, color .2s, border-color .2s;
 }}
-.exo-btn:hover {{ background:#e5e7eb; color:#111827; border-color:rgba(99,102,241,.6); }}
+.exo-btn:hover {{ background: #e5e7eb; color: #111827; border-color: rgba(99, 102, 241, .6); }}
 .exo-btn:focus-visible {{ outline: 2px solid #9aa7ff; outline-offset: 2px; }}
 
 .exo-bars, .exo-bars::before, .exo-bars::after {{
-  content:""; display:block; width:22px; height:2px; background: currentColor;
-  position: relative; border-radius:2px;
+  content: ""; display: block; width: 22px; height: 2px; background: currentColor;
+  position: relative; border-radius: 2px;
 }}
-.exo-bars::before {{ position:absolute; top:-6px; }}
-.exo-bars::after  {{ position:absolute; top: 6px; }}
+.exo-bars::before {{ position: absolute; top: -6px; }}
+.exo-bars::after  {{ position: absolute; top: 6px; }}
 
 /* ====== 下拉選單（帶背景框一起滑下來） ====== */
 .exo-menu {{
@@ -145,6 +162,15 @@ div.block-container {{ padding-top: 64px !important; }}
 </style>
 
 <div class="exo-top" role="navigation" aria-label="Primary">
+  <!-- 左側 Home 按鈕 -->
+  <form class="exo-left-form" method="get" action="/" aria-label="Home">
+    <button type="submit" class="exo-left-btn" title="Home" aria-label="Home">
+      <svg class="exo-home-ico" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+        <path d="M3 11.5L12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-8.5z" fill="currentColor"/>
+      </svg>
+    </button>
+  </form>
+
   <!-- 中央：點擊回首頁（不開新分頁） -->
   <form class="exo-center-form" method="get" action="/" aria-label="Go to Home">
     <button type="submit" class="exo-center-btn" title="Back to main">
@@ -184,17 +210,6 @@ div.block-container {{ padding-top: 64px !important; }}
           </button>
         </form>
       </li>
-      <li class="exo-subitem" data-path="/analyze-demo">
-        <form class="exo-link-form" method="get" action="/analyze-demo">
-          <button class="exo-link-btn" type="submit">
-            <span class="exo-ico">
-              <!-- play/demo 圖示 -->
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-            </span>
-            Try our analysis demo
-          </button>
-        </form>
-      </li>
       <li data-path="/fits_converter">
         <form class="exo-link-form" method="get" action="/fits_converter">
           <button class="exo-link-btn" type="submit">
@@ -213,18 +228,7 @@ div.block-container {{ padding-top: 64px !important; }}
               <!-- 檢核/check 圖示 -->
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M20.285 2.859a1 1 0 0 1 .14 1.408l-10 12a1 1 0 0 1-1.43.09l-5-4.5a1 1 0 1 1 1.33-1.49l4.246 3.822 9.3-11.16a1 1 0 0 1 1.414-.17z"/></svg>
             </span>
-            Vet your data
-          </button>
-        </form>
-      </li>
-      <li class="exo-subitem" data-path="/vetting-demo">
-        <form class="exo-link-form" method="get" action="/vetting-demo">
-          <button class="exo-link-btn" type="submit">
-            <span class="exo-ico">
-              <!-- play/demo 圖示 -->
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-            </span>
-            Try our vetting demo
+            How model works
           </button>
         </form>
       </li>
@@ -257,7 +261,7 @@ function setExpanded() {{
 toggle.addEventListener('change', setExpanded);
 setExpanded();
 
-// 外點擊關閉 + Esc 關閉
+ // 外點擊關閉 + Esc 關閉
 overlay && overlay.addEventListener('click', () => {{ toggle.checked = false; setExpanded(); }});
 document.addEventListener('keydown', (e) => {{
   if (e.key === 'Escape' && toggle.checked) {{
