@@ -173,7 +173,7 @@ if "candidate_index" not in st.session_state:
     st.session_state.candidate_index = 0
 if "candidates" not in st.session_state:
     st.session_state.candidates = []
-    rng = np.random.default_rng(7)
+    rng = np.random.default_rng()
     for i in range(10):
         t = np.linspace(0, 50, 500)
         f = 1 + rng.normal(0, 0.002, 500)
@@ -185,7 +185,7 @@ if "candidates" not in st.session_state:
             events.append(float(tt))
         st.session_state.candidates.append(
             {
-                "id": f"TIC-{200000+i}",
+                "id": f"TIC-{200000+rng.integers(0,99999)}",
                 "time": t,
                 "flux": f,
                 "period": float(period),
