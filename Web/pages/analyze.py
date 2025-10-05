@@ -42,7 +42,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 MODELS_DIR = os.path.join(PROJECT_ROOT, 'models')
 FEATURE_LIST_PATH = os.path.join(MODELS_DIR, 'feature_list.json')
-MODEL_PATH = os.path.join(MODELS_DIR, 'new_model_20251004_211436.pkl')
+MODEL_PATH = os.path.join(MODELS_DIR, '\exoplanet_model_20251005_231130.pkl')
 
 # ========== THEME ==========
 def apply_premium_theme():
@@ -205,7 +205,34 @@ def load_model():
     try:
         import joblib
         if os.path.exists(MODEL_PATH):
-            return joblib.load(MODEL_PATH)
+            model = joblib.load(MODEL_PATH)
+            
+            # 嘗試修復模型的隨機性（深入修復）
+            try:
+                # 如果是 StackingClassifier
+                if hasattr(model, 'estimators_'):
+                    for name, estimator in model.estimators_:
+                        if hasattr(estimator, 'random_state'):
+                            if estimator.random_state is None:
+                                estimator.random_state = 42
+                                st.sidebar.warning(f"⚠️ Fixed random_state for {name}")
+                
+                # 修復 final_estimator
+                if hasattr(model, 'final_estimator_'):
+                    if hasattr(model.final_estimator_, 'random_state'):
+                        if model.final_estimator_.random_state is None:
+                            model.final_estimator_.random_state = 42
+                            st.sidebar.warning("⚠️ Fixed random_state for final_estimator")
+                
+                # 修復單一模型
+                if hasattr(model, 'random_state') and model.random_state is None:
+                    model.random_state = 42
+                    st.sidebar.warning("⚠️ Fixed random_state for model")
+                    
+            except Exception as fix_error:
+                st.sidebar.error(f"Could not fix model randomness: {str(fix_error)}")
+            
+            return model
         return None
     except Exception as e:
         st.error(f"Error loading model: {str(e)}")
@@ -214,8 +241,11 @@ def load_model():
 # ========== Predict ==========
 def predict_with_model(features_dict, model=None):
     if not features_dict:
+        st.warning("⚠️ No features extracted - using fallback prediction")
         return {'prediction':'NOT_PLANET','confidence':0.5,'planet_probability':0.3,'not_planet_probability':0.7,'model_version':'20251004_211436','model_type':'Stacking Ensemble','feature_count':0}
+    
     X = pd.DataFrame([features_dict])
+    
     if model is not None:
         try:
             pred = model.predict(X)[0]
@@ -223,12 +253,15 @@ def predict_with_model(features_dict, model=None):
             not_p, p = float(proba[0]), float(proba[1])
             conf = float(p if pred=='PLANET' else not_p)
         except Exception as e:
-            st.error(f"Prediction error: {str(e)}")
+            st.error(f"❌ Prediction error: {str(e)}")
+            st.warning("⚠️ Using random fallback values - model may have feature mismatch")
             pred = np.random.choice(['PLANET','NOT_PLANET'], p=[0.35,0.65])
             p = float(np.random.uniform(0.3,0.7)); not_p = 1-p; conf=max(p,not_p)
     else:
+        st.warning("⚠️ Model not loaded - using random fallback values (results will vary each run)")
         pred = np.random.choice(['PLANET','NOT_PLANET'], p=[0.35,0.65])
         p = float(np.random.uniform(0.3,0.7)); not_p = 1-p; conf=max(p,not_p)
+    
     return {'prediction':str(pred),'confidence':float(conf),'planet_probability':float(p),'not_planet_probability':float(not_p),'model_version':'20251004_211436','model_type':'Stacking Ensemble','feature_count':len(features_dict)}
 
 # ========== Plot ==========
@@ -339,11 +372,27 @@ with st.sidebar:
     st.info("Required Columns:\n• Time series data\n• Flux measurements\n\nOptimal:\n• 100+ data points\n• Clean, continuous data\n• Normalized flux")
     st.markdown("---")
     st.markdown("### Workflow")
-    st.markdown("1. Upload CSV data  \n2. Extract features  \n3. Classify signal  \n4. View results  \n5. Export report")
+    st.markdown("1. Upload CSV data  \n2. Set probability range  \n3. Run analysis  \n4. View results  \n5. Export report")
     st.markdown("---")
     with st.expander("Debug Info", expanded=False):
-        st.code(f"Model: {os.path.exists(MODEL_PATH)}")
-        st.code(f"Features: {os.path.exists(FEATURE_LIST_PATH)}")
+        st.code(f"Model exists: {os.path.exists(MODEL_PATH)}")
+        st.code(f"Features exists: {os.path.exists(FEATURE_LIST_PATH)}")
+        
+        # 模型類型檢測
+        if os.path.exists(MODEL_PATH):
+            model = load_model()
+            if model is not None:
+                st.code(f"Model type: {type(model).__name__}")
+                st.code(f"Model class: {model.__class__.__module__}.{model.__class__.__name__}")
+        
+        if st.session_state.analysis_ready:
+            st.code(f"Last analysis: {st.session_state.analysis.get('timestamp', 'N/A')}")
+            st.code(f"Feature hash: {st.session_state.analysis.get('feature_hash', 'N/A')}")
+            st.code(f"Planet prob: {st.session_state.analysis['results']['planet_probability']:.6f}")
+            
+            st.markdown("---")
+            st.markdown("**🧪 Diagnostics**")
+            st.info("Run tests after uploading data and completing analysis")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -409,19 +458,74 @@ if uploaded_file is not None:
             st.markdown("<br>", unsafe_allow_html=True)
             st.dataframe(df_processed[['time','flux']].head(15), use_container_width=True, height=300)
 
+        # ---------- 🧪 Diagnostic Tests ----------
+        if st.session_state.analysis_ready:
+            with st.expander("🧪 Model Diagnostics", expanded=False):
+                st.markdown("### Test Model Consistency")
+                st.info("These tests help identify if your model produces consistent results")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("🔬 Test Feature Extraction", help="Extract features 5 times to check consistency", use_container_width=True):
+                        with st.spinner("Testing feature extraction..."):
+                            import hashlib
+                            hashes = []
+                            for i in range(5):
+                                features, _ = extract_features(df_processed)
+                                feature_hash = hashlib.md5(str(sorted(features.items())).encode()).hexdigest()[:8]
+                                hashes.append(feature_hash)
+                                st.code(f"Extraction {i+1}: {feature_hash}")
+                            
+                            if len(set(hashes)) == 1:
+                                st.success("✅ Feature extraction is DETERMINISTIC")
+                            else:
+                                st.error("❌ Feature extraction is NON-DETERMINISTIC!")
+                                st.warning("This shouldn't happen - check for random operations in extract_features()")
+                
+                with col2:
+                    if st.button("🧪 Test Model Predictions", help="Run 5 predictions to check if results are consistent", use_container_width=True):
+                        with st.spinner("Testing model predictions..."):
+                            features = st.session_state.analysis['features']
+                            model = load_model()
+                            probs = []
+                            for i in range(5):
+                                result = predict_with_model(features, model)
+                                probs.append(result['planet_probability'])
+                                st.code(f"Prediction {i+1}: {result['planet_probability']:.8f}")
+                            
+                            if len(set(probs)) == 1:
+                                st.success("✅ Model is DETERMINISTIC - all predictions identical!")
+                            else:
+                                st.error(f"❌ Model is NON-DETERMINISTIC - got {len(set(probs))} different values!")
+                                st.warning("**Possible causes:**")
+                                st.code("1. Model uses dropout/random sampling during inference")
+                                st.code("2. Model trained without fixed random_state")
+                                st.code("3. Ensemble uses random tie-breaking")
+                                st.info("💡 **Solution:** Retrain model with:\n- random_state=42 for all estimators\n- model.set_params(random_state=42)")
+                                
+                                # 顯示變異程度
+                                import numpy as np
+                                std = np.std(probs)
+                                range_val = max(probs) - min(probs)
+                                st.metric("Standard Deviation", f"{std:.6f}")
+                                st.metric("Range", f"{range_val:.6f} ({range_val*100:.2f}%)")
+
         st.markdown("<br>", unsafe_allow_html=True)
 
         # ---------- (Pre-analysis) Planet Prob Preference ----------
         pref1, pref2, pref3 = st.columns([1,3,1])
         with pref2:
-            # 使用自訂 HTML 顯示白色標題與說明，然後隱藏 slider 的內建標籤
-            st.markdown('<h3 style="color:#ffffff; margin-bottom:8px;">Planet Probability Preference</h3>', unsafe_allow_html=True)
-            st.markdown('<div style="color:#e8eef8; margin-bottom:6px;">Keep result when Planet Probability is within:</div>', unsafe_allow_html=True)
+            st.markdown('<h3 style="color:#ffffff; margin-bottom:8px;">Custom Detection Threshold</h3>', unsafe_allow_html=True)
+            st.markdown('<div style="color:#e8eef8; margin-bottom:6px;">Set your probability range - signals within this range will be classified as PLANET:</div>', unsafe_allow_html=True)
+            if st.session_state.analysis_ready:
+                st.markdown('<div style="color:#ffd700; font-size:0.9rem; margin-bottom:6px;">💡 Tip: Adjusting the slider below will update the detection result instantly without re-running the analysis.</div>', unsafe_allow_html=True)
             pp_range = st.slider(
-                "",  # 標籤留空，改用上方的 HTML 以確保為白色字體
+                "",  
                 min_value=0.0, max_value=1.0,
                 value=st.session_state.pp_range, step=0.01,
-                key="pp_range"
+                key="pp_range",
+                help="Define your custom threshold range. Default model uses 50%, but you can adjust this based on your requirements (e.g., [0.70-1.00] for high confidence, [0.30-0.70] for uncertain cases)"
             )
 
         # ---------- Analyze Button ----------
@@ -437,14 +541,31 @@ if uploaded_file is not None:
             status.markdown("### Step 1/5: Preprocessing data..."); progress.progress(10); time.sleep(0.3)
             status.markdown("### Step 2/5: Extracting features..."); progress.progress(30)
             features, extra = extract_features(df_processed)
-            status.markdown("### Step 3/5: Loading model..."); progress.progress(50); model = load_model(); time.sleep(0.2)
+            status.markdown("### Step 3/5: Loading model..."); progress.progress(50)
+            model = load_model()
+            if model is not None:
+                status.markdown("### ✅ Model loaded successfully"); time.sleep(0.3)
+            else:
+                status.markdown("### ⚠️ Model not found - using demo mode"); time.sleep(0.3)
             status.markdown("### Step 4/5: Running classification..."); progress.progress(75)
             results = predict_with_model(features, model); time.sleep(0.2)
             status.markdown("### Step 5/5: Generating results..."); progress.progress(100); time.sleep(0.1)
             status.empty(); progress.empty()
 
-            st.session_state.analysis = {'features': features, 'extra': extra, 'results': results}
+            # 儲存分析結果和時間戳記用於調試
+            import hashlib
+            feature_hash = hashlib.md5(str(sorted(features.items())).encode()).hexdigest()[:8]
+            st.session_state.analysis = {
+                'features': features, 
+                'extra': extra, 
+                'results': results,
+                'timestamp': time.strftime('%H:%M:%S'),
+                'feature_hash': feature_hash
+            }
             st.session_state.analysis_ready = True
+            
+            # 顯示分析完成訊息
+            st.success(f"✅ Analysis completed at {st.session_state.analysis['timestamp']} | Feature hash: {feature_hash}")
 
         # ---------- 顯示分析結果（從 session 讀取；滑桿變動也會保留） ----------
         if st.session_state.analysis_ready and st.session_state.analysis is not None:
@@ -453,33 +574,41 @@ if uploaded_file is not None:
             results  = st.session_state.analysis['results']
 
             st.markdown('<div class="rs-divider"></div>', unsafe_allow_html=True)
+            
+            # 顯示分析時間戳記
+            analysis_time = st.session_state.analysis.get('timestamp', 'Unknown')
+            feature_hash = st.session_state.analysis.get('feature_hash', 'N/A')
+            st.info(f"📊 Showing results from analysis at **{analysis_time}** (Hash: {feature_hash})")
+            
             st.markdown('<div class="rs-section rs-title">Detection Results</div>', unsafe_allow_html=True)
 
-            is_planet = results['prediction'] == 'PLANET'
-            badge_cls = "ok" if is_planet else "no"
-            label = "PLANET DETECTED" if is_planet else "NO PLANET"
+            # ---- 根據使用者設定的範圍來決定最終結果 ----
+            p = float(results['planet_probability'])
+            # 直接使用 session_state 中的值，因為 slider 的 key 會自動更新它
+            current_range = st.session_state.pp_range
+            in_range = (current_range[0] <= p <= current_range[1])
+            
+            # 最終判定：只看機率是否在使用者設定的範圍內
+            # 使用者設定範圍就是在自訂閾值，所以不用再考慮模型原始預測
+            is_planet_detected = in_range
+            badge_cls = "ok" if is_planet_detected else "no"
+            label = "PLANET DETECTED" if is_planet_detected else "NO PLANET DETECTED"
             st.markdown(f'<div class="rs-badge {badge_cls}">{label}</div>', unsafe_allow_html=True)
 
             st.markdown('<div class="rs-section rs-title">Classification Metrics</div>', unsafe_allow_html=True)
             st.markdown(f"""
             <div class="rs-grid">
               <div class="rs-card"><div class="lbl">Planet Prob.</div><div class="val">{results['planet_probability']:.1%}</div></div>
+              <div class="rs-card"><div class="lbl">Your Threshold</div><div class="val">{current_range[0]:.0%}–{current_range[1]:.0%}</div></div>
               <div class="rs-card"><div class="lbl">Feature Count</div><div class="val">{results['feature_count']}</div></div>
             </div>
             """, unsafe_allow_html=True)
 
-            # ---- 使用「分析前」設定的範圍來顯示狀態 ----
-            p = float(results['planet_probability'])
-            # 讀 slider 當前值：優先用 pp_range 區域變數（存在時），否則 fallback session
-            current_range = pp_range if 'pp_range' in locals() else st.session_state.pp_range
-            in_range = (current_range[0] <= p <= current_range[1])
-            status_text = "IN RANGE" if in_range else "OUT OF RANGE"
-            status_cls = "ok" if in_range else "no"
-            st.markdown(
-                f'<div class="rs-badge {status_cls}">{status_text}: {p:.1%} '
-                f'(target {current_range[0]:.0%}–{current_range[1]:.0%})</div>',
-                unsafe_allow_html=True
-            )
+            # ---- 顯示判定說明 ----
+            if in_range:
+                st.success(f"✅ Planet probability ({p:.1%}) is within your specified range ({current_range[0]:.0%}–{current_range[1]:.0%})")
+            else:
+                st.warning(f"⚠️ Planet probability ({p:.1%}) is outside your specified range ({current_range[0]:.0%}–{current_range[1]:.0%})")
 
             # --- Model / Run Info ---
             st.markdown(f"""
@@ -548,7 +677,9 @@ if uploaded_file is not None:
             full = {**results, **features, **extra,
                     "pp_range_min": current_range[0],
                     "pp_range_max": current_range[1],
-                    "pp_in_range": in_range}
+                    "pp_in_range": in_range,
+                    "final_detection": "PLANET" if is_planet_detected else "NO_PLANET",
+                    "model_raw_prediction": results['prediction']}
             csv = pd.DataFrame([full]).to_csv(index=False)
             ts = time.strftime('%Y%m%d_%H%M%S')
             st.download_button(
