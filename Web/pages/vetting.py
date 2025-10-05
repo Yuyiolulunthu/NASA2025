@@ -395,22 +395,60 @@ mapping = {"False Positive": "FALSE_POSITIVE",
            "Planet Candidate": "CANDIDATE",
            "Confirmed Planet": "CONFIRMED"}
 
+
+
 sel_key = f"selected_label_{idx}"
 if sel_key not in st.session_state:
     st.session_state[sel_key] = None
 
 # --- STEP 1: 選擇列（單行） ---
-st.markdown("<div style='color:var(--text-0); font-size:1.05rem; font-weight:700; margin-bottom:6px;'>STEP 1: Select your vetting decision below</div>", unsafe_allow_html=True)
-# keep radio as a single horizontal row; key is per-candidate so state is preserved
-chosen = st.radio(
-    "",  # no extra label because we already printed STEP 1 above
-    options=labels,
-    index=None,
-    horizontal=True,
-    key=sel_key,
+st.markdown(
+    "<div style='color:var(--text-0); font-size:1.05rem; font-weight:700; margin-bottom:6px;'>STEP 1: Select your vetting decision below</div>",
+    unsafe_allow_html=True
 )
 
-st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
+# 大按鈕樣式（只作用這一組）
+st.markdown("""
+<style>
+.decision-buttons .stButton>button{
+  height:72px !important;
+  min-height:72px !important;
+  font-size:1.5rem !important;      /* 文字變大 */
+  font-weight:800 !important;
+  border-radius:14px !important;
+  padding:12px 18px !important;
+  color:#ffffff !important;          /* 文字白色 */
+  border:1px solid var(--ring) !important;
+}
+/* 三顆按鈕的容器與間距 */
+.decision-buttons .row{
+  display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;
+}
+@media (max-width: 980px){
+  .decision-buttons .row{ grid-template-columns:1fr; }
+}
+</style>
+""", unsafe_allow_html=True)
+
+# 以三顆大按鈕模擬 radio（單選）
+st.markdown("<div class='decision-buttons'><div class='row'>", unsafe_allow_html=True)
+cols = st.columns(3)
+for i, (col, opt) in enumerate(zip(cols, labels)):
+    with col:
+        is_sel = (st.session_state.get(sel_key) == opt)
+        # 選到的那顆顯示為 primary（藍色），其餘 secondary
+        if st.button(
+            opt,
+            key=f"decision_opt_{idx}_{i}",
+            use_container_width=True,
+            type=("primary" if is_sel else "secondary"),
+        ):
+            st.session_state[sel_key] = opt
+st.markdown("</div></div>", unsafe_allow_html=True)
+
+# 讓後面 Step 2 讀到最新選擇
+chosen = st.session_state.get(sel_key)
+
 
 # --- STEP 2: Submit 列（單行） ---
 st.markdown("<div style='color:var(--text-0); font-size:1.05rem; font-weight:700; margin-bottom:6px;'>STEP 2: Submit your decision</div>", unsafe_allow_html=True)
