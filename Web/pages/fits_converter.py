@@ -125,7 +125,37 @@ p.app-subtitle{
 }
 
 /* ===== Dataframe ===== */
-[data-testid="stDataFrame"] { background: rgba(20,30,60,.7); }
+[data-testid="stDataFrame"] { 
+  background: rgba(20,30,60,.7);
+  color: #ffffff !important;
+}
+[data-testid="stDataFrame"] * { color: #ffffff !important; }
+
+/* ===== Radio (Conversion Mode) =====
+   Ensure radio option labels are white (including horizontal layout) */
+[data-testid="stRadio"] label,
+.stRadio label,
+.stRadio div[role="radiogroup"] label,
+.stRadio div[role="radiogroup"] > label > div {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* Selected radio option */
+.stRadio [aria-checked="true"] label,
+.stRadio [aria-checked="true"] {
+  color: #ffffff !important;
+}
+
+/* ----- Tighten spacing between the custom header and the radio buttons ----- */
+/* reduce the gap so "Conversion Mode" sits closer to the options */
+.stRadio,
+div[data-testid="stRadio"],
+.stRadio div[role="radiogroup"] {
+  margin-top: -6px !important;
+  margin-bottom: 6px !important;
+  padding-top: 0 !important;
+}
 
 /* ===== Tabs ===== */
 .stTabs [data-baseweb="tab-list"] { gap: 8px; }
@@ -231,10 +261,14 @@ with tab1:
                     st.warning("No image data in primary HDU")
                 st.markdown('</div>', unsafe_allow_html=True)
 
+            # 使用自訂白色標題，並將 radio 的內建標籤留空以呈現白色字體
+            # tighten header spacing so it sits closer to the radio row
+            st.markdown('<div style="color:#ffffff; font-weight:700; margin-bottom:2px;">Conversion Mode</div>', unsafe_allow_html=True)
             conversion_mode = st.radio(
-                "Conversion Mode",
+                "",
                 ["Full Image Data", "Statistical Summary", "Header Information"],
-                horizontal=True
+                horizontal=True,
+                key="conversion_mode"
             )
 
             if st.button("Convert to CSV", key="convert_single"):
