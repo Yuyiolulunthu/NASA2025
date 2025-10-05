@@ -128,10 +128,10 @@ st.markdown("""
   <h0 class="space-title">ExoMatch</h0>
   <p class="subtitle">AI × Human collaboration platform for professional and educational exoplanet analysis.</p>
   <nav class="side-actions">
-    <a href="/about">About our model</a>
-    <a href="/analyze">Analyze your data</a>
-    <a href="/fits_converter">FITS Converter</a>
-    <a href="/vetting">Learning about vetting</a>
+    <a href="/about" target="_self">About our model</a>
+    <a href="/analyze" target="_self">Analyze your data</a>
+    <a href="/fits_converter" target="_self">FITS Converter</a>
+    <a href="/vetting" target="_self">Learning about vetting</a>
   </nav>
 </section>
 """, unsafe_allow_html=True)

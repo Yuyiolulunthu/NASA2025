@@ -65,11 +65,11 @@ div.block-container {{ padding-top: 64px !important; }}
       <span>ExoMatch</span>
     </div>
     <div class='nav-actions' role="menu" aria-label="Top links">
-      <a href="/">Home</a>
-      <a href="/about">About our model</a>
-      <a href="/analyze">Analyze your data</a>
-      <a href="/fits_converter">FITS Converter</a>
-      <a href="/vetting">Learning about vetting</a>
+      <a href="/" target="_self">Home</a>
+      <a href="/about" target="_self">About our model</a>
+      <a href="/analyze" target="_self">Analyze your data</a>
+      <a href="/fits_converter" target="_self">FITS Converter</a>
+      <a href="/vetting" target="_self">Learning about vetting</a>
     </div>
   </div>
 </div>
