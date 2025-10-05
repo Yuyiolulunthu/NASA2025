@@ -20,7 +20,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 # Assuming render_banner exists or removing it if it causes issues outside of the original environment
-# render_banner() 
+render_banner() 
 hide_streamlit_header_style = """
     <style>
     #MainMenu {visibility: hidden;}
