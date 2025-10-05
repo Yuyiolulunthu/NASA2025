@@ -1,6 +1,9 @@
 """
 Exoplanet Vetting Platform — Enterprise (No Emoji)
-Transit selector above the chart, radio text white and enlarged 3x.
+- Bottom candidate bar (sticky at bottom)
+- Removed duplicate candidate indicator
+- Confirm button: subtle dark red, hover keeps effect
+- Confirm aligned with left edge of decision radios
 Run:
     streamlit run vetting_only.py
 """
@@ -11,6 +14,13 @@ import plotly.graph_objects as go
 import plotly.io as pio
 import streamlit as st
 
+# ==== Banner ====
+try:
+    from components.banner import render_banner
+    HAS_BANNER = True
+except Exception:
+    HAS_BANNER = False
+
 # ========== Page Config ==========
 st.set_page_config(
     page_title="Exoplanet Hunter — Vetting",
@@ -20,7 +30,14 @@ st.set_page_config(
 )
 
 pio.templates.default = "plotly_dark"
-
+hide_streamlit_header_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 # ========== CSS ==========
 st.markdown(
     """
@@ -30,42 +47,40 @@ st.markdown(
     --panel:#121a36; --panel-2:#141c3b;
     --text-0:#e8ecf3; --text-1:#c8d0e3; --text-2:#8b95af;
     --brand:#4d7cff; --accent:#2bd4a7; --ring:#27376f; --border:#1f2c5b;
-  }
-  .stApp{ background: radial-gradient(1100px 900px at 10% 0%, var(--bg-1), var(--bg-0)); color:var(--text-0); }
-  [data-testid="stSidebar"]{ background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%); border-right:1px solid var(--ring); }
-
-  /* === Radio 整段文字改為白色（含未選取項） === */
-  [data-testid="stRadio"] * { color:#ffffff !important; }
-  [data-testid="stRadio"] div[role="radiogroup"] label > div:nth-child(2),
-  [data-testid="stRadio"] label span { color:#ffffff !important; font-weight:500; }
-
-  /* === 放大 radio 選項（約 3 倍） === */
-  [data-testid="stRadio"] div[role="radiogroup"] label {
-      transform: scale(1.8);
-      transform-origin: left center;
-      margin-right: 2.5rem;
-  }
-  [data-testid="stRadio"] div[role="radiogroup"] {
-      gap: 2.5rem !important;
-  }
-  [data-testid="stRadio"] label span {
-      font-size: 1.1rem !important;
-      vertical-align: middle !important;
+    --banner-h: 72px;             /* 你的 banner 預估高度 */
+    --bottombar-h: 64px;          /* 底部候選人條高度 */
   }
 
-  /* Top bar */
-  body > .main, div.block-container, main[role="main"]{ padding-top:76px !important; }
-  #top-progress{ position:fixed; top:0; left:0; right:0; height:68px; z-index:9999; pointer-events:none; }
-  #top-progress .wrap{
+  .stApp{
+    background: radial-gradient(1100px 900px at 10% 0%, var(--bg-1), var(--bg-0));
+    color:var(--text-0);
+  }
+  [data-testid="stSidebar"]{
+    background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
+    border-right:1px solid var(--ring);
+  }
+
+  /* ====== 內容間距：上方為 banner 預留、下方為底部條預留 ====== */
+  body > .main, div.block-container, main[role="main"]{
+    padding-top: calc(var(--banner-h) + 16px) !important;
+    padding-bottom: calc(var(--bottombar-h) + 16px) !important;
+  }
+
+  /* ====== Bottom candidate bar（取代原本上方版本） ====== */
+  #bottom-progress{
+    position:fixed; left:0; right:0; bottom:0;
+    height: var(--bottombar-h); z-index: 900; pointer-events:none;
+  }
+  #bottom-progress .wrap{
     height:100%; display:flex; align-items:center; gap:16px; padding:0 20px;
-    background:rgba(10,16,32,.72); backdrop-filter:blur(6px);
-    border-bottom:1px solid var(--ring); box-shadow:0 8px 24px rgba(0,0,0,.4);
+    background:rgba(10,16,32,.80); backdrop-filter:blur(6px);
+    border-top:1px solid var(--ring); box-shadow:0 -8px 24px rgba(0,0,0,.35);
   }
-  #top-progress .label{ color:var(--text-0); font-weight:700; min-width:220px; letter-spacing:.2px; pointer-events:auto; }
-  #top-progress .bar{ flex:1; height:10px; background:rgba(255,255,255,.06); border-radius:999px; overflow:hidden; }
-  #top-progress .bar>i{ display:block; height:100%; background:linear-gradient(90deg, var(--brand), #7fa1ff); border-radius:999px; transition:width 380ms ease; }
+  #bottom-progress .label{ color:var(--text-0); font-weight:700; min-width:220px; letter-spacing:.2px; pointer-events:auto; }
+  #bottom-progress .bar{ flex:1; height:10px; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; }
+  #bottom-progress .bar>i{ display:block; height:100%; background:linear-gradient(90deg, var(--brand), #7fa1ff); border-radius:999px; transition:width 380ms ease; }
 
-  /* Cards */
+  /* ====== Cards / Metrics ====== */
   .card{ background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); border:1px solid var(--border);
          border-radius:14px; padding:16px; box-shadow:0 6px 22px rgba(0,0,0,.30); }
   .metric{ background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%); border:1px solid var(--border);
@@ -73,18 +88,42 @@ st.markdown(
   .m-title{ color:var(--text-2); font-size:.85rem; margin:0 0 .2rem 0; }
   .m-val{ color:#bcd2ff; font-size:1.2rem; font-weight:700; letter-spacing:.2px; }
 
-  /* Confidence bar */
+  /* ====== Confidence bar ====== */
   .conf-wrap{ margin:8px 0 2px 0; }
   .conf-bar{ height:26px; border-radius:999px; background:linear-gradient(90deg, #ef4444, #f59e0b, #10b981); position:relative; overflow:hidden; border:1px solid var(--ring);}
   .conf-ind{ position:absolute; top:0; left:0; height:100%; background:rgba(255,255,255,.25); border-right:3px solid #fff; box-shadow:0 0 16px rgba(255,255,255,.35); }
   .muted{ color:var(--text-2); }
 
-  /* Buttons */
-  .stButton>button{ border-radius:10px !important; border:1px solid var(--ring) !important; background:rgba(255,255,255,.05) !important; color:var(--text-0) !important; }
+  /* ====== Decision radios：大字體 + 間距 + 換行（無 transform:scale，避免覆蓋） ====== */
+  [data-testid="stRadio"] * { color:#ffffff !important; }
+  [data-testid="stRadio"] div[role="radiogroup"]{
+      display:flex; flex-wrap:wrap; column-gap:1.75rem; row-gap:.6rem; align-items:center;
+  }
+  [data-testid="stRadio"] label{
+      padding:.35rem .6rem; border-radius:10px; border:1px solid transparent;
+  }
+  [data-testid="stRadio"] label:hover{ background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.12); }
+  [data-testid="stRadio"] label span{
+      font-size:1.35rem !important; line-height:1.35rem !important; font-weight:600 !important;
+  }
+  .decision-block{ margin-bottom: .75rem; }  /* 與 Confirm 拉出間距，避免視覺擁擠 */
+
+  /* ====== Confirm（微深紅底；只針對 form 內的按鈕） ====== */
+  [data-testid="stForm"] button{
+    background:#8b1f1f !important;          /* 微深紅 */
+    border: 1px solid #7a1b1b !important;
+    color:#fff !important; font-weight:800 !important;
+    border-radius:10px !important;
+  }
+  [data-testid="stForm"] button:hover{ filter: brightness(1.06); }  /* Hover 效果保留 */
 </style>
 """,
     unsafe_allow_html=True,
 )
+
+# ========== Banner ==========
+if HAS_BANNER:
+    render_banner()
 
 # ========== Demo Data ==========
 if "candidate_index" not in st.session_state:
@@ -146,7 +185,6 @@ def create_interactive_lightcurve(c):
     fig.update_yaxes(gridcolor="rgba(200,200,200,0.15)")
     return fig
 
-
 def create_transit_zoom(c, k=0, height=520):
     if len(c["transit_times"]) == 0:
         return go.Figure()
@@ -180,7 +218,6 @@ def create_transit_zoom(c, k=0, height=520):
     fig.update_yaxes(gridcolor="rgba(200,200,200,0.15)")
     return fig
 
-
 def confidence_bar(conf):
     return f"""
     <div class="card conf-wrap">
@@ -195,7 +232,6 @@ def confidence_bar(conf):
     </div>
     """
 
-
 def metric_html(title, value):
     return f"<div class='metric'><div class='m-title'>{title}</div><div class='m-val'>{value}</div></div>"
 
@@ -206,9 +242,10 @@ def render_vetting():
     total = len(candidates)
     pct = int(((idx + 1) / total) * 100) if total else 0
 
+    # === 底部固定候選人條（唯一的 candidate 指示；上方那個已移除） ===
     st.markdown(
         f"""
-        <div id="top-progress">
+        <div id="bottom-progress">
           <div class="wrap">
             <div class="label">Candidate {idx+1} / {total} — {pct}%</div>
             <div class="bar"><i style="width:{pct}%;"></i></div>
@@ -247,17 +284,18 @@ def render_vetting():
         return
 
     cur = candidates[idx]
-    st.progress((idx + 1) / total, text=f"Candidate {idx+1} of {total}")
+
+    # 移除另一個 candidate 指示（原本的 st.progress 已刪除）
 
     st.markdown(
         f"""
         <div class='card' style='padding:12px 16px; margin-top:8px;'>
-          <div style='display:flex;justify-content:space-between;align-items:center; gap:12px;'>
+          <div style='display:flex;justify-content:space-between;align-items:center; gap:12px; flex-wrap:wrap;'>
             <div>
               <div style='color:var(--text-1);margin:0;'>Target</div>
               <div style='font-weight:700; font-size:1.15rem; color:#bcd2ff;'>{cur['id']}</div>
             </div>
-            <div style='display:flex; gap:12px;'>
+            <div style='display:flex; gap:12px; flex-wrap:wrap;'>
               {metric_html("Period", f"{cur['period']:.2f} d")}
               {metric_html("Depth", f"{cur['depth']:.2f} %")}
               {metric_html("Duration", f"{cur['duration']:.2f} hr")}
@@ -294,28 +332,37 @@ def render_vetting():
         fig_zoom = create_transit_zoom(cur, transit_num, height=520)
         st.plotly_chart(fig_zoom, use_container_width=True, config={"displayModeBar": False})
 
-    # === Decision ===
+    # === Decision + Confirm（Confirm 與左側 radios 對齊；Confirm 微深紅） ===
     st.subheader("Vetting Decision")
+
+    st.markdown("<div class='decision-block'>", unsafe_allow_html=True)
     decision = st.radio(
         "Select a label",
         options=["False Positive", "Planet Candidate", "Confirmed Planet"],
         horizontal=True,
         key=f"decision_{idx}",
+        label_visibility="collapsed",
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    col_submit, col_prev, col_skip, col_reset = st.columns([2, 1, 1, 1])
-    with col_submit:
-        if st.button("Submit Decision", use_container_width=True):
-            mapping = {
-                "False Positive": "FALSE_POSITIVE",
-                "Planet Candidate": "CANDIDATE",
-                "Confirmed Planet": "CONFIRMED",
-            }
-            st.session_state.labels.append(mapping[decision])
-            st.session_state.candidate_index += 1
-            st.toast(f"Recorded: {decision}")
-            time.sleep(0.1)
-            st.rerun()
+    # 讓 Confirm 就貼在 radios 下方，天然左對齊
+    with st.form(f"decision_form_{idx}", clear_on_submit=False):
+        confirm = st.form_submit_button("Confirm", use_container_width=False)
+
+    if confirm:
+        mapping = {
+            "False Positive": "FALSE_POSITIVE",
+            "Planet Candidate": "CANDIDATE",
+            "Confirmed Planet": "CONFIRMED",
+        }
+        st.session_state.labels.append(mapping[decision])
+        st.session_state.candidate_index += 1
+        st.toast(f"Recorded: {decision}")
+        time.sleep(0.1)
+        st.rerun()
+
+    # 其他控制鍵（保留）
+    col_prev, col_skip, col_reset = st.columns([1, 1, 1])
     with col_prev:
         if st.button("Previous", use_container_width=True, disabled=(idx == 0)):
             st.session_state.candidate_index = max(0, idx - 1)
@@ -332,6 +379,8 @@ def render_vetting():
             st.rerun()
 
 # ========== Run ==========
+if HAS_BANNER:
+    render_banner()
 render_vetting()
 
 st.markdown(
