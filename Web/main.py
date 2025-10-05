@@ -405,10 +405,10 @@ st.markdown(
       <div class='topnav-inner'>
         <div class='brand'>Exoplanet Detection AI</div>
         <div class='nav-actions'>
-          <a href='#about'>About our model</a>
-          <a href='#detect'>Analyze your data</a>
-          <a href='#fits'>FITS Converter</a>
-          <a href='#how'>How model works</a>
+          <a href='/about'>About our model</a>
+          <a href='/analyze'>Analyze your data</a>
+          <a href='/fits_converter'>FITS Converter</a>
+          <a href='/vetting'>How model works</a>
         </div>
       </div>
     </div>
