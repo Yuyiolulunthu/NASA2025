@@ -414,12 +414,14 @@ if uploaded_file is not None:
         # ---------- (Pre-analysis) Planet Prob Preference ----------
         pref1, pref2, pref3 = st.columns([1,3,1])
         with pref2:
-            st.markdown("### Planet Probability Preference")
+            # 使用自訂 HTML 顯示白色標題與說明，然後隱藏 slider 的內建標籤
+            st.markdown('<h3 style="color:#ffffff; margin-bottom:8px;">Planet Probability Preference</h3>', unsafe_allow_html=True)
+            st.markdown('<div style="color:#e8eef8; margin-bottom:6px;">Keep result when Planet Probability is within:</div>', unsafe_allow_html=True)
             pp_range = st.slider(
-                "Keep result when Planet Probability is within:",
+                "",  # 標籤留空，改用上方的 HTML 以確保為白色字體
                 min_value=0.0, max_value=1.0,
                 value=st.session_state.pp_range, step=0.01,
-                key="pp_range"  # 只讀寫入 key；不要再做 st.session_state.pp_range = slider(...)
+                key="pp_range"
             )
 
         # ---------- Analyze Button ----------
@@ -461,9 +463,7 @@ if uploaded_file is not None:
             st.markdown('<div class="rs-section rs-title">Classification Metrics</div>', unsafe_allow_html=True)
             st.markdown(f"""
             <div class="rs-grid">
-              <div class="rs-card"><div class="lbl">Confidence</div><div class="val">{results['confidence']:.1%}</div></div>
               <div class="rs-card"><div class="lbl">Planet Prob.</div><div class="val">{results['planet_probability']:.1%}</div></div>
-              <div class="rs-card"><div class="lbl">Not-Planet Prob.</div><div class="val">{results['not_planet_probability']:.1%}</div></div>
               <div class="rs-card"><div class="lbl">Feature Count</div><div class="val">{results['feature_count']}</div></div>
             </div>
             """, unsafe_allow_html=True)
