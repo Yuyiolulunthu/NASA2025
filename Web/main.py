@@ -3,10 +3,11 @@ from components.banner import render_banner
 
 # ---------- Page Config ----------
 st.set_page_config(
-    page_title="Exoplanet Hunter",
+    page_title="ExoMatch - Exoplanet Hunter",
     page_icon="Web/logo.png",
     layout="wide",
 )
+
 render_banner()
 st.markdown("""
     <style>
@@ -138,7 +139,7 @@ st.markdown("""
   <h0 class="space-title">ExoMatch</h0>
   <p class="subtitle">AI × Human collaboration platform for professional and educational exoplanet analysis of the next generation.</p>
   <div class="cta-wrap">
-    <div class="cta-button" onclick="window.location.href='pages/analyze.py'">&gt; Start Analyzing</div>
+    <div class="cta-button" onclick="window.location.href='/pages/analyze'">&gt; Start Analyzing</div>
   </div>
             
 </section>
@@ -174,7 +175,5 @@ with b3:
     if st.button("User Contributions", use_container_width=True, key="btn_user"):
         st.switch_page("pages/about.py")
 
-st.markdown('<br><br><div style="text-align:center;color:#aaa;">Exoplanet Hunter v3.8 — Separate Hero CTA Style</div>', unsafe_allow_html=True)
+st.markdown('<br><br><div style="text-align:center;color:#aaa;">ExoMatch v3.8 — Auto Navigation</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
-
-
