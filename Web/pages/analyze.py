@@ -4,20 +4,14 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy import stats
+from components.banner import render_banner
 import time
 import json
 import os
-from components.banner import render_banner
 
-# ================== Page Config ==================
-st.set_page_config(
-    page_title="Exoplanet Detection AI",
-    layout="wide",
-    initial_sidebar_state="expanded",
-    page_icon="Web/logo.png"
-)
-
+st.set_page_config(page_title="Exoplanet Detection AI Pro", page_icon="Web/logo.png", layout="wide", initial_sidebar_state="expanded")
 render_banner()
+
 hide_streamlit_header_style = """
     <style>
     #MainMenu {visibility: hidden;}
@@ -27,171 +21,644 @@ hide_streamlit_header_style = """
     """
 st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 
-# ================== Paths ==================
+# Get the correct paths relative to the script location
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))  # Go up from Web/pages/ to project root
+PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 MODELS_DIR = os.path.join(PROJECT_ROOT, 'models')
 FEATURE_LIST_PATH = os.path.join(MODELS_DIR, 'feature_list.json')
 MODEL_PATH = os.path.join(MODELS_DIR, 'new_model_20251004_211436.pkl')
 
-# ================== Premium (Enterprise) Theme ==================
-def apply_enterprise_theme():
+# --- CLEAN PROFESSIONAL THEME ---
+def apply_premium_theme():
     st.markdown("""
     <style>
-        :root{
-            --bg-0:#0b0f1a;
-            --bg-1:#0e1624;
-            --bg-2:#121a2a;
-            --card:#151e2f;
-            --border:#24314a;
-            --muted:#a7b3c7;
-            --text:#eef2f8;
-            --accent:#4f7cff;
-            --accent-2:#7aa2ff;
-            --positive:#27c07d;
-            --negative:#ff5c5c;
-            --warn:#f0ad4e;
+        /* Clean Background */
+        .stApp {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1729 100%);
         }
-
-        /* Base */
-        .stApp { background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%); }
-        #MainMenu, header, footer {visibility:hidden;}
-        .block-container{ padding-top:2rem; padding-bottom:4rem; }
-
-        /* Title */
-        .main-title{
-            color: var(--text);
+        
+        /* Clear, Readable Title */
+        .main-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3.5rem;
             font-weight: 800;
-            font-size: clamp(3.0rem, 4.4vw + 0.6rem, 4.2rem); /* 放大且自適應 */
-            line-height: 1.12;
-            letter-spacing: -0.02em;
-            text-align:center;
-            margin: 0 0 .35rem 0;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
         }
-        .subtitle{
-            color: var(--muted);
-            font-size: clamp(1.0rem, 0.6vw + 0.85rem, 1.2rem);
-            text-align:center;
-            margin-bottom: 1.6rem;
+        
+        .subtitle {
+            text-align: center;
+            color: #ffffff;
+            font-size: 1.4rem;
+            margin-bottom: 2rem;
+            font-weight: 500;
         }
-
-        /* Global headings 層級微調 */
-        h3 { font-size: 1.45rem; }
-        h4 { font-size: 1.18rem; }
-
-        /* Cards */
-        .card{
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1.25rem 1.25rem;
+        
+        /* Clean Cards - dark initially, bright on hover */
+        .analysis-card {
+            background: linear-gradient(135deg, rgba(22, 33, 62, 0.7), rgba(15, 52, 96, 0.7));
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.3);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
         }
-        .card.tight{ padding: 1rem 1rem; }
-        .card h4{ color: var(--text); margin: 0 0 .75rem 0; font-weight:700; }
-
-        /* Upload card with dashed border */
-        .upload-card{
-            background: rgba(21,30,47,0.75);
-            border: 2px dashed rgba(122,162,255,0.55);
-            border-radius: 12px;
-            padding: 2.2rem 2rem;
-            transition: border-color .12s ease, box-shadow .12s ease, background .12s ease;
+        
+        .analysis-card:hover {
+            transform: translateY(-3px);
+            background: linear-gradient(135deg, rgba(22, 33, 62, 0.95), rgba(15, 52, 96, 0.95));
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 12px 40px 0 rgba(102, 126, 234, 0.6);
         }
-        .upload-card:hover{
-            border-color: rgba(122,162,255,0.8);
-            box-shadow: 0 10px 22px rgba(79,124,255,.18);
-            background: rgba(21,30,47,0.85);
-        }
-        /* 讓 Upload Light Curve Data 標題變成純白 */
-        .upload-card h4{
-            color:#ffffff !important;
-            margin-top:0;
-            font-weight:700;
-        }
-        .upload-card p{ color:#c7d3e9; }
-        .upload-card small{ color:#9fb0cf; }
-
-        /* Metric grid */
-        .metric-card{
-            background: linear-gradient(180deg, rgba(79,124,255,0.08) 0%, rgba(79,124,255,0.04) 100%);
-            border: 1px solid rgba(79,124,255,0.35);
-            border-radius: 10px;
-            padding: .9rem 1rem;
-            text-align:center;
-            transition: transform .12s ease;
-        }
-        .metric-card:hover{ transform: translateY(-2px); }
-        .metric-label{ color:#c6d2e6; font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; }
-        .metric-value{ color: var(--text); font-size: 1.8rem; font-weight: 800; margin-top:.2rem; }
-
-        /* Buttons */
-        .stButton > button{
-            width:100%;
-            background: var(--accent);
-            color: #fff;
-            border: 1px solid #2e56cb;
-            border-radius: 10px;
-            padding: .9rem 1rem;
+        
+        .analysis-card h3, .analysis-card h4 {
+            color: #ffffff !important;
             font-weight: 700;
-            letter-spacing:.02em;
-            transition: background .12s ease, transform .12s ease, box-shadow .12s ease;
-            box-shadow: 0 8px 20px rgba(79,124,255,.18);
+            font-size: 1.4rem;
         }
-        .stButton > button:hover{
-            background: #406eea;
-            transform: translateY(-1px);
-            box-shadow: 0 10px 22px rgba(79,124,255,.24);
+        
+        .analysis-card p {
+            color: #d0d0d0 !important;
+            font-size: 1.1rem !important;
+            transition: color 0.3s ease;
         }
-
-        /* Status chips (prediction) */
-        .status{
-            display:inline-flex; align-items:center; justify-content:center;
-            padding:.6rem 1rem; border-radius: 8px; gap:.5rem;
-            font-weight:800; letter-spacing:.02em; font-size:1.05rem;
-            border:1px solid; min-width:220px;
+        
+        .analysis-card:hover p {
+            color: #ffffff !important;
         }
-        .status.positive{ color:#0c2a1c; background: rgba(39,192,125,.18); border-color: rgba(39,192,125,.45); }
-        .status.negative{ color:#2a0c0c; background: rgba(255,92,92,.18); border-color: rgba(255,92,92,.45); }
-
-        /* Sidebar */
-        [data-testid="stSidebar"]{
-            background: linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 100%) !important;
-            border-right: 1px solid var(--border);
+        
+        .analysis-card strong {
+            color: #ffffff !important;
         }
-        [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] li{
-            color: var(--text) !important;
+        
+        /* Clear Metric Cards - subtle initially, vibrant on hover */
+        .metric-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+            border: 2px solid rgba(102, 126, 234, 0.4);
+            border-radius: 15px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
         }
-
-        /* Tables/Dataframe */
-        .dataframe { color: var(--text) !important; }
-        .dataframe thead th{
-            background: #1b2740 !important;
-            color: #eaf0ff !important;
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.4));
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.5);
+            border-color: rgba(102, 126, 234, 0.9);
+        }
+        
+        .metric-value {
+            font-size: 2.8rem;
+            font-weight: 700;
+            color: #4facfe;
+            margin: 0.8rem 0;
+            transition: all 0.3s ease;
+        }
+        
+        .metric-card:hover .metric-value {
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        
+        .metric-label {
+            color: #d0d0d0;
+            font-size: 1.15rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            transition: color 0.3s ease;
+        }
+        
+        .metric-card:hover .metric-label {
+            color: #ffffff;
+        }
+        
+        /* Clear Prediction Badge */
+        .prediction-badge {
+            display: inline-block;
+            padding: 2rem 3.5rem;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 2.2rem;
+            margin: 1.5rem 0;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .planet-detected {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: #ffffff;
+            box-shadow: 0 8px 32px rgba(72, 187, 120, 0.6);
+            border: 3px solid #68d391;
+        }
+        
+        .not-planet {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+            color: #ffffff;
+            box-shadow: 0 8px 32px rgba(245, 101, 101, 0.6);
+            border: 3px solid #feb2b2;
+        }
+        
+        /* Clear Buttons - subtle gradient initially */
+        .stButton > button {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+            color: white !important;
+            border: 2px solid rgba(102, 126, 234, 0.5) !important;
+            border-radius: 15px !important;
+            padding: 1.2rem 3rem !important;
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+            transition: all 0.3s ease !important;
+            width: 100%;
+        }
+        
+        .stButton > button:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-color: rgba(102, 126, 234, 0.9) !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6) !important;
+        }
+        
+        /* Progress Bar */
+        .stProgress > div > div > div > div {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* Clear, Readable Text */
+        .stMarkdown, .stText, p, span, div {
+            color: #e0e0e0 !important;
+            font-size: 1.1rem;
+        }
+        
+        h1, h2, h3, h4 {
+            color: #ffffff !important;
+        }
+        
+        h2 {
+            font-size: 2rem !important;
+        }
+        
+        h3 {
+            font-size: 1.6rem !important;
+        }
+        
+        h4 {
+            font-size: 1.3rem !important;
+        }
+        
+        /* Ensure all labels are visible */
+        label {
+            color: #d0d0d0 !important;
+            font-size: 1.15rem !important;
+            font-weight: 600 !important;
+        }
+        
+        /* Alert Boxes - Smart Contrast - content always bright */
+        .stSuccess {
+            background-color: rgba(72, 187, 120, 0.3) !important;
+            border: 2px solid #48bb78 !important;
+            color: #ffffff !important;
+            font-size: 1.1rem !important;
+        }
+        
+        .stSuccess p, .stSuccess div, .stSuccess span, .stSuccess strong {
+            color: #ffffff !important;
+        }
+        
+        .stWarning {
+            background-color: rgba(237, 137, 54, 0.3) !important;
+            border: 2px solid #ed8936 !important;
+            color: #ffffff !important;
+            font-size: 1.1rem !important;
+        }
+        
+        .stWarning p, .stWarning div, .stWarning span, .stWarning strong {
+            color: #ffffff !important;
+        }
+        
+        .stError {
+            background-color: rgba(245, 101, 101, 0.3) !important;
+            border: 2px solid #f56565 !important;
+            color: #ffffff !important;
+            font-size: 1.1rem !important;
+        }
+        
+        .stError p, .stError div, .stError span, .stError strong {
+            color: #ffffff !important;
+        }
+        
+        .stInfo {
+            background-color: rgba(66, 153, 225, 0.3) !important;
+            border: 2px solid #4299e1 !important;
+            color: #ffffff !important;
+            font-size: 1.1rem !important;
+        }
+        
+        .stInfo p, .stInfo div, .stInfo span, .stInfo strong {
+            color: #ffffff !important;
+        }
+        
+        /* Sidebar - subtle elements */
+        [data-testid="stSidebar"] {
+            background-color: rgba(10, 14, 39, 0.95) !important;
+        }
+        
+        [data-testid="stSidebar"] .stMarkdown {
+            color: #d0d0d0 !important;
+        }
+        
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3,
+        [data-testid="stSidebar"] h4 {
+            color: #ffffff !important;
+        }
+        
+        [data-testid="stSidebar"] p {
+            color: #d0d0d0 !important;
+        }
+        
+        [data-testid="stSidebar"] .stInfo {
+            background-color: rgba(66, 153, 225, 0.25) !important;
+        }
+        
+        [data-testid="stSidebar"] .stInfo:hover {
+            background-color: rgba(66, 153, 225, 0.35) !important;
+        }
+        
+        [data-testid="stSidebar"] .stSuccess {
+            background-color: rgba(72, 187, 120, 0.25) !important;
+        }
+        
+        [data-testid="stSidebar"] .stSuccess:hover {
+            background-color: rgba(72, 187, 120, 0.35) !important;
+        }
+        
+        [data-testid="stSidebar"] .stWarning {
+            background-color: rgba(237, 137, 54, 0.25) !important;
+        }
+        
+        [data-testid="stSidebar"] .stWarning:hover {
+            background-color: rgba(237, 137, 54, 0.35) !important;
+        }
+        
+        /* File Uploader - subtle initially */
+        .stFileUploader {
+            border: 3px dashed rgba(102, 126, 234, 0.3) !important;
+            border-radius: 20px !important;
+            padding: 2rem !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .stFileUploader:hover {
+            border-color: rgba(102, 126, 234, 0.7) !important;
+            background-color: rgba(102, 126, 234, 0.05) !important;
+        }
+        
+        .stFileUploader label {
+            color: #d0d0d0 !important;
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .stFileUploader:hover label {
+            color: #ffffff !important;
+        }
+        
+        /* Data Table - High Contrast */
+        .dataframe {
+            color: #ffffff !important;
+            font-size: 1.05rem !important;
+            background-color: rgba(15, 25, 50, 0.6) !important;
+        }
+        
+        .dataframe thead th {
+            background-color: rgba(102, 126, 234, 0.7) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+        }
+        
+        .dataframe tbody td {
+            color: #ffffff !important;
+            background-color: rgba(15, 25, 50, 0.4) !important;
+        }
+        
+        .dataframe tbody tr:hover td {
+            background-color: rgba(102, 126, 234, 0.3) !important;
+        }
+        
+        /* Selectbox - darker initially */
+        .stSelectbox label, .stFileUploader label {
+            color: #d0d0d0 !important;
+            font-weight: 600 !important;
+            font-size: 1.15rem !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .stSelectbox:hover label,
+        .stFileUploader:hover label {
+            color: #ffffff !important;
+        }
+        
+        .stSelectbox > div > div {
+            background-color: rgba(15, 25, 50, 0.6) !important;
+            border: 2px solid rgba(102, 126, 234, 0.3) !important;
+            color: #d0d0d0 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .stSelectbox > div > div:hover,
+        .stSelectbox > div > div:focus-within {
+            background-color: rgba(15, 25, 50, 0.9) !important;
+            border-color: rgba(102, 126, 234, 0.6) !important;
+            color: #ffffff !important;
+        }
+        
+        .stSelectbox input {
+            color: #d0d0d0 !important;
+        }
+        
+        .stSelectbox input:focus {
+            color: #ffffff !important;
+        }
+        
+        /* Text Input */
+        .stTextInput input {
+            background-color: rgba(15, 25, 50, 0.6) !important;
+            border: 2px solid rgba(102, 126, 234, 0.3) !important;
+            color: #d0d0d0 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .stTextInput input:hover,
+        .stTextInput input:focus {
+            background-color: rgba(15, 25, 50, 0.9) !important;
+            border-color: rgba(102, 126, 234, 0.6) !important;
+            color: #ffffff !important;
+        }
+        
+        .stTextInput label {
+            color: #d0d0d0 !important;
+            font-size: 1.15rem !important;
+            font-weight: 600 !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .stTextInput:hover label,
+        .stTextInput:focus-within label {
+            color: #ffffff !important;
+        }
+        
+        /* Metric Enhancement - subtle initially */
+        .stMetric {
+            background-color: rgba(15, 25, 50, 0.2) !important;
+            padding: 1rem !important;
+            border-radius: 10px !important;
+            border: 1px solid rgba(102, 126, 234, 0.2) !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .stMetric:hover {
+            background-color: rgba(15, 25, 50, 0.4) !important;
+            border-color: rgba(102, 126, 234, 0.4) !important;
+        }
+        
+        .stMetric label {
+            color: #d0d0d0 !important;
+            font-weight: 600 !important;
+            font-size: 1.1rem !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .stMetric:hover label {
+            color: #ffffff !important;
+        }
+        
+        .stMetric .metric-value {
+            color: #4facfe !important;
+            font-weight: 700 !important;
+            font-size: 1.9rem !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .stMetric:hover .metric-value {
+            color: #00d4ff !important;
+        }
+        
+        [data-testid="stMetricValue"] {
+            font-size: 1.9rem !important;
+            font-weight: 700 !important;
+            color: #4facfe !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .stMetric:hover [data-testid="stMetricValue"] {
+            color: #00d4ff !important;
+        }
+        
+        [data-testid="stMetricLabel"] {
+            color: #d0d0d0 !important;
+            font-size: 1.1rem !important;
+            font-weight: 600 !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .stMetric:hover [data-testid="stMetricLabel"] {
+            color: #ffffff !important;
+        }
+        
+        [data-testid="stMetricDelta"] {
+            color: #d0d0d0 !important;
+        }
+        
+        /* Expander - Dark when closed, bright when active */
+        .streamlit-expanderHeader {
+            background: rgba(15, 25, 50, 0.6) !important;
+            border: 2px solid rgba(102, 126, 234, 0.4) !important;
+            border-radius: 10px !important;
+            font-weight: 700 !important;
+            font-size: 1.25rem !important;
+            color: #e0e0e0 !important;
+            padding: 1rem !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .streamlit-expanderHeader:hover {
+            border-color: rgba(102, 126, 234, 0.7) !important;
+            background: rgba(102, 126, 234, 0.3) !important;
+            color: #ffffff !important;
+        }
+        
+        .streamlit-expanderHeader p {
+            color: #e0e0e0 !important;
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .streamlit-expanderHeader:hover p {
+            color: #ffffff !important;
+        }
+        
+        .streamlit-expanderHeader svg {
+            fill: #e0e0e0 !important;
+            transition: fill 0.3s ease !important;
+        }
+        
+        .streamlit-expanderHeader:hover svg {
+            fill: #ffffff !important;
+        }
+        
+        /* When expanded */
+        .streamlit-expanderHeader[aria-expanded="true"] {
+            background: rgba(102, 126, 234, 0.4) !important;
+            border-color: rgba(102, 126, 234, 0.8) !important;
+            color: #ffffff !important;
+        }
+        
+        .streamlit-expanderHeader[aria-expanded="true"] p {
+            color: #ffffff !important;
+        }
+        
+        .streamlit-expanderHeader[aria-expanded="true"] svg {
+            fill: #ffffff !important;
+        }
+        
+        /* Expander content area - always bright when visible */
+        .streamlit-expanderContent {
+            background-color: rgba(15, 25, 50, 0.4) !important;
+            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+            border-top: none !important;
+            padding: 1.5rem !important;
+        }
+        
+        .streamlit-expanderContent p,
+        .streamlit-expanderContent div,
+        .streamlit-expanderContent span,
+        .streamlit-expanderContent strong {
+            color: #ffffff !important;
+        }
+        
+        .streamlit-expanderContent label {
+            color: #ffffff !important;
+        }
+        
+        /* Checkbox labels - darker when unchecked */
+        .stCheckbox {
+            transition: all 0.3s ease;
+        }
+        
+        .stCheckbox label {
+            color: #b0b0b0 !important;
+            font-size: 1.1rem !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .stCheckbox:hover label {
+            color: #ffffff !important;
+        }
+        
+        .stCheckbox input:checked ~ label {
+            color: #ffffff !important;
+        }
+        
+        /* Radio button labels */
+        .stRadio label {
+            color: #b0b0b0 !important;
+            font-size: 1.1rem !important;
+            transition: color 0.3s ease !important;
+        }
+        
+        .stRadio:hover label {
+            color: #ffffff !important;
+        }
+        
+        /* All paragraph text */
+        p {
+            color: #e0e0e0 !important;
+            font-size: 1.1rem !important;
+        }
+        
+        /* List items */
+        ul li, ol li {
+            color: #e0e0e0 !important;
+            font-size: 1.1rem !important;
+        }
+        
+        /* Strong/Bold text - always bright for emphasis */
+        strong, b {
+            color: #ffffff !important;
             font-weight: 700 !important;
         }
-        .dataframe tbody td{ color: #dbe5f8 !important; }
-
-        /* Alerts (re-tone) */
-        .stAlert{ background: rgba(27,39,64,.7) !important; border: 1px solid var(--border) !important; color: var(--text) !important; }
-
-        /* Code blocks */
-        .stCodeBlock{
-            background: #10192c !important;
-            border: 1px solid var(--border) !important;
+        
+        /* Links */
+        a {
+            color: #00d4ff !important;
         }
-        code{ color:#9bd2ff !important; }
-
-        /* Plotly container background alignment */
-        .stPlotlyChart > div > div{
-            background: transparent !important;
+        
+        a:hover {
+            color: #4facfe !important;
+        }
+        
+        /* Code blocks */
+        code {
+            color: #00f5ff !important;
+            background-color: rgba(0, 20, 40, 0.8) !important;
+            padding: 0.2rem 0.5rem !important;
+            border-radius: 5px !important;
+            font-size: 1rem !important;
+        }
+        
+        pre {
+            background-color: rgba(0, 20, 40, 0.8) !important;
+            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+            border-radius: 10px !important;
+            padding: 1rem !important;
+        }
+        
+        pre code {
+            color: #00f5ff !important;
+        }
+        
+        /* Spinner/Loading */
+        .stSpinner > div {
+            border-top-color: #00d4ff !important;
+        }
+        
+        /* Download button - subtle initially */
+        .stDownloadButton > button {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+            color: white !important;
+            border: 2px solid rgba(102, 126, 234, 0.5) !important;
+            border-radius: 15px !important;
+            padding: 1.2rem 3rem !important;
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .stDownloadButton > button:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border-color: rgba(102, 126, 234, 0.9) !important;
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6) !important;
         }
     </style>
     """, unsafe_allow_html=True)
 
-apply_enterprise_theme()
-
-# ================== Feature List ==================
+# --- Load Feature List ---
 def load_feature_list():
+    """Load the feature list from feature_list.json"""
     try:
         if os.path.exists(FEATURE_LIST_PATH):
             with open(FEATURE_LIST_PATH, 'r') as f:
@@ -201,100 +668,114 @@ def load_feature_list():
                 elif isinstance(feature_data, dict) and 'features' in feature_data:
                     return feature_data['features']
                 else:
-                    st.warning("feature_list.json format not recognized.")
+                    st.warning("⚠️ feature_list.json format not recognized.")
                     return None
         else:
             return None
     except Exception as e:
-        st.error(f"Error loading feature list: {str(e)}")
+        st.error(f"❌ Error loading feature list: {str(e)}")
         return None
 
 FEATURE_LIST = load_feature_list()
 
-# ================== Feature Engineering ==================
+# --- Feature Extraction Functions ---
 def extract_features(df):
+    """Extract features from the light curve data with validation"""
     try:
         features = {}
         flux = df['flux'].values
-        time_arr = df['time'].values
+        time = df['time'].values
         all_features = {}
-
-        # Basic
-        all_features['mean_flux'] = float(np.mean(flux))
-        all_features['std_flux'] = float(np.std(flux))
-        all_features['min_flux'] = float(np.min(flux))
-        all_features['max_flux'] = float(np.max(flux))
-        all_features['median_flux'] = float(np.median(flux))
-        all_features['flux_range'] = float(np.max(flux) - np.min(flux))
-        all_features['cv_flux'] = float(np.std(flux) / np.mean(flux)) if np.mean(flux) != 0 else 0.0
-
-        # Distribution
-        all_features['skewness'] = float(stats.skew(flux, bias=False, nan_policy='omit'))
-        all_features['kurtosis'] = float(stats.kurtosis(flux, bias=False, nan_policy='omit'))
-        all_features['percentile_75'] = float(np.percentile(flux, 75))
-        all_features['percentile_25'] = float(np.percentile(flux, 25))
-        all_features['percentile_90'] = float(np.percentile(flux, 90))
-
-        # Trend
-        denom = (np.max(time_arr) - np.min(time_arr))
-        time_norm = (time_arr - np.min(time_arr)) / denom if denom != 0 else time_arr
-        slope, intercept, r_value, _, _ = stats.linregress(time_norm, flux)
-        all_features['trend_slope'] = float(slope)
-        all_features['trend_r2'] = float(r_value ** 2)
-        all_features['linear_fit_error'] = float(np.mean(np.abs(flux - (slope * time_norm + intercept))))
-
-        # Variability
-        flux_diff = np.diff(flux) if len(flux) > 1 else np.array([0.0])
-        all_features['mean_absolute_deviation'] = float(np.mean(np.abs(flux - np.mean(flux))))
-        all_features['flux_diff_mean'] = float(np.mean(flux_diff))
-        all_features['flux_diff_std'] = float(np.std(flux_diff))
-        all_features['flux_diff_max'] = float(np.max(np.abs(flux_diff))) if len(flux_diff) else 0.0
-
-        # Rolling
+        
+        # Data quality check
+        if len(flux) < 10:
+            st.warning("⚠️ Very few data points detected. Results may be unreliable.")
+        
+        # Basic Statistics
+        all_features['mean_flux'] = np.mean(flux)
+        all_features['std_flux'] = np.std(flux)
+        all_features['min_flux'] = np.min(flux)
+        all_features['max_flux'] = np.max(flux)
+        all_features['median_flux'] = np.median(flux)
+        all_features['flux_range'] = np.max(flux) - np.min(flux)
+        all_features['cv_flux'] = np.std(flux) / np.mean(flux) if np.mean(flux) != 0 else 0
+        
+        # Distribution Features
+        all_features['skewness'] = stats.skew(flux)
+        all_features['kurtosis'] = stats.kurtosis(flux)
+        all_features['percentile_75'] = np.percentile(flux, 75)
+        all_features['percentile_25'] = np.percentile(flux, 25)
+        all_features['percentile_90'] = np.percentile(flux, 90)
+        
+        # Trend Features
+        time_normalized = (time - np.min(time)) / (np.max(time) - np.min(time)) if np.max(time) != np.min(time) else time
+        slope, intercept, r_value, _, _ = stats.linregress(time_normalized, flux)
+        all_features['trend_slope'] = slope
+        all_features['trend_r2'] = r_value ** 2
+        all_features['linear_fit_error'] = np.mean(np.abs(flux - (slope * time_normalized + intercept)))
+        
+        # Variability Features
+        flux_diff = np.diff(flux)
+        all_features['mean_absolute_deviation'] = np.mean(np.abs(flux - np.mean(flux)))
+        all_features['flux_diff_mean'] = np.mean(flux_diff)
+        all_features['flux_diff_std'] = np.std(flux_diff)
+        all_features['flux_diff_max'] = np.max(np.abs(flux_diff))
+        
+        # Rolling Statistics
         window = max(5, len(flux) // 20)
-        rolling_std = pd.Series(flux, dtype=float).rolling(window=window, center=True).std()
-        all_features['rolling_std_mean'] = float(np.nanmean(rolling_std))
-        all_features['rolling_std_max'] = float(np.nanmax(rolling_std))
-        all_features['rolling_std_min'] = float(np.nanmin(rolling_std))
-
-        # Meta
-        all_features['data_points'] = int(len(flux))
-        all_features['time_span'] = float(np.max(time_arr) - np.min(time_arr)) if len(time_arr) else 0.0
-
+        rolling_std = pd.Series(flux).rolling(window=window, center=True).std()
+        all_features['rolling_std_mean'] = np.nanmean(rolling_std)
+        all_features['rolling_std_max'] = np.nanmax(rolling_std)
+        all_features['rolling_std_min'] = np.nanmin(rolling_std)
+        
+        # Additional features
+        all_features['data_points'] = len(flux)
+        all_features['time_span'] = np.max(time) - np.min(time)
+        
+        # Signal quality metrics
+        all_features['snr'] = all_features['mean_flux'] / all_features['std_flux'] if all_features['std_flux'] != 0 else 0
+        all_features['data_quality_score'] = min(100, (len(flux) / 100) * 50 + all_features['snr'] * 10)
+        
         if FEATURE_LIST:
             for feature_name in FEATURE_LIST:
-                features[feature_name] = all_features.get(feature_name, 0)
+                if feature_name in all_features:
+                    features[feature_name] = all_features[feature_name]
+                else:
+                    features[feature_name] = 0
         else:
             default_features = [
-                'mean_flux','std_flux','min_flux','max_flux','median_flux',
-                'flux_range','cv_flux','skewness','kurtosis','percentile_75',
-                'trend_slope','trend_r2','linear_fit_error','mean_absolute_deviation',
-                'flux_diff_mean','flux_diff_std','flux_diff_max',
-                'rolling_std_mean','rolling_std_max','rolling_std_min'
+                'mean_flux', 'std_flux', 'min_flux', 'max_flux', 'median_flux',
+                'flux_range', 'cv_flux', 'skewness', 'kurtosis', 'percentile_75',
+                'trend_slope', 'trend_r2', 'linear_fit_error', 'mean_absolute_deviation',
+                'flux_diff_mean', 'flux_diff_std', 'flux_diff_max',
+                'rolling_std_mean', 'rolling_std_max', 'rolling_std_min'
             ]
             for feature_name in default_features:
-                features[feature_name] = all_features.get(feature_name, 0)
-
-        return features
+                if feature_name in all_features:
+                    features[feature_name] = all_features[feature_name]
+        
+        return features, all_features
     except Exception as e:
-        st.error(f"Feature extraction failed: {str(e)}")
-        return {}
+        st.error(f"❌ Feature extraction failed: {str(e)}")
+        return {}, {}
 
-# ================== Model Loading ==================
+# --- Model Loading ---
 def load_model():
+    """Load your trained model from models folder"""
     try:
         import joblib
         if os.path.exists(MODEL_PATH):
-            return joblib.load(MODEL_PATH)
+            model = joblib.load(MODEL_PATH)
+            return model
         else:
-            st.warning("Model file not found. Running in demo mode.")
             return None
     except Exception as e:
-        st.error(f"Error loading model: {str(e)}")
+        st.error(f"❌ Error loading model: {str(e)}")
         return None
 
-# ================== Predict ==================
+# --- Prediction Function ---
 def predict_with_model(features_dict, model=None):
+    """Make predictions using your model"""
     if not features_dict:
         return {
             'prediction': 'NOT_PLANET',
@@ -305,29 +786,29 @@ def predict_with_model(features_dict, model=None):
             'model_type': 'Stacking Ensemble',
             'feature_count': 0
         }
-
+    
     features_df = pd.DataFrame([features_dict])
-
+    
     if model is not None:
         try:
             prediction = model.predict(features_df)[0]
             probabilities = model.predict_proba(features_df)[0]
-            not_planet_prob = float(probabilities[0])
-            planet_prob = float(probabilities[1])
-            confidence = float(planet_prob if prediction == 'PLANET' else not_planet_prob)
+            not_planet_prob = probabilities[0]
+            planet_prob = probabilities[1]
+            confidence = planet_prob if prediction == 'PLANET' else not_planet_prob
         except Exception as e:
-            st.error(f"Prediction error: {str(e)}")
-            prediction = np.random.choice(['PLANET','NOT_PLANET'], p=[0.35,0.65])
-            planet_prob = float(np.random.uniform(0.3,0.7))
-            not_planet_prob = float(1 - planet_prob)
-            confidence = float(max(planet_prob, not_planet_prob))
+            st.error(f"❌ Prediction error: {str(e)}")
+            prediction = np.random.choice(['PLANET', 'NOT_PLANET'], p=[0.35, 0.65])
+            planet_prob = np.random.uniform(0.3, 0.7)
+            not_planet_prob = 1 - planet_prob
+            confidence = max(planet_prob, not_planet_prob)
     else:
-        prediction = np.random.choice(['PLANET','NOT_PLANET'], p=[0.35,0.65])
-        planet_prob = float(np.random.uniform(0.3,0.7))
-        not_planet_prob = float(1 - planet_prob)
-        confidence = float(max(planet_prob, not_planet_prob))
-
-    return {
+        prediction = np.random.choice(['PLANET', 'NOT_PLANET'], p=[0.35, 0.65])
+        planet_prob = np.random.uniform(0.3, 0.7)
+        not_planet_prob = 1 - planet_prob
+        confidence = max(planet_prob, not_planet_prob)
+    
+    results = {
         'prediction': prediction,
         'confidence': confidence,
         'planet_probability': planet_prob,
@@ -336,345 +817,799 @@ def predict_with_model(features_dict, model=None):
         'model_type': 'Stacking Ensemble',
         'feature_count': len(features_dict)
     }
+    
+    return results
 
-# ================== Plot ==================
-def create_visualization_plot(df, features):
+# --- Enhanced Visualization ---
+def create_visualization_plot(df, features, extra_features):
+    """Create professional visualization plots"""
     fig = make_subplots(
-        rows=2, cols=2,
-        subplot_titles=('Light Curve', 'Flux Distribution', 'Detrended Signal', 'Feature Summary'),
-        specs=[[{"secondary_y": False}, {"secondary_y": False}],
-               [{"secondary_y": False}, {"type": "bar"}]],
-        vertical_spacing=0.12,
-        horizontal_spacing=0.1
+        rows=3, cols=2,
+        subplot_titles=(
+            '🌟 Light Curve Time Series', 
+            '📊 Flux Distribution & Statistics', 
+            '🔍 Detrended Signal Analysis',
+            '📈 Feature Importance Ranking',
+            '🌊 Rolling Statistics',
+            '⚡ Signal Quality Metrics'
+        ),
+        specs=[
+            [{"secondary_y": False}, {"secondary_y": False}],
+            [{"secondary_y": False}, {"type": "bar"}],
+            [{"secondary_y": True}, {"type": "indicator"}]
+        ],
+        vertical_spacing=0.10,
+        horizontal_spacing=0.12
     )
-
-    mean_flux = features.get('mean_flux', float(df['flux'].mean()))
-    std_flux = features.get('std_flux', float(df['flux'].std()))
-    flux_range = features.get('flux_range', float(df['flux'].max() - df['flux'].min()))
-    cv_flux = features.get('cv_flux', (std_flux/mean_flux) if mean_flux else 0.0)
-
-    # 1. Time Series
+    
+    mean_flux = features.get('mean_flux', df['flux'].mean())
+    std_flux = features.get('std_flux', df['flux'].std())
+    
+    # 1. Enhanced Time Series
     fig.add_trace(
         go.Scatter(
-            x=df['time'], y=df['flux'], mode='lines', name='Light Curve',
-            line=dict(color='#9bd2ff', width=2),
-            hovertemplate='Time: %{x:.4f}<br>Flux: %{y:.6f}<extra></extra>'
+            x=df['time'], 
+            y=df['flux'], 
+            mode='lines+markers',
+            name='Light Curve',
+            line=dict(color='#00f5ff', width=2.5),
+            marker=dict(size=4, color='#667eea', opacity=0.6),
+            hovertemplate='<b>Time:</b> %{x:.4f}<br><b>Flux:</b> %{y:.8f}<extra></extra>'
         ),
         row=1, col=1
     )
-    fig.add_hline(y=mean_flux, line_dash="dash", line_color="#ffd666",
-                  line_width=2, annotation_text="Mean", annotation_font_color="#eaeaea",
-                  row=1, col=1)
-
-    # 2. Histogram
+    
+    fig.add_hline(
+        y=mean_flux, 
+        line_dash="dash", 
+        line_color="#00ff88", 
+        line_width=3,
+        annotation_text="Mean Flux",
+        annotation_font_color="#00ff88",
+        annotation_font_size=12,
+        row=1, col=1
+    )
+    
+    fig.add_hline(
+        y=mean_flux + std_flux,
+        line_dash="dot",
+        line_color="#ff0080",
+        line_width=2,
+        annotation_text="+1σ",
+        row=1, col=1
+    )
+    
+    fig.add_hline(
+        y=mean_flux - std_flux,
+        line_dash="dot",
+        line_color="#ff0080",
+        line_width=2,
+        annotation_text="-1σ",
+        row=1, col=1
+    )
+    
+    # 2. Distribution with KDE overlay
     fig.add_trace(
-        go.Histogram(x=df['flux'], name='Distribution', nbinsx=50,
-                     marker=dict(color='#4f7cff', opacity=0.85)),
+        go.Histogram(
+            x=df['flux'],
+            name='Distribution',
+            nbinsx=40,
+            marker=dict(
+                color='#667eea',
+                opacity=0.7,
+                line=dict(color='#00f5ff', width=1)
+            ),
+            hovertemplate='<b>Flux Range:</b> %{x}<br><b>Count:</b> %{y}<extra></extra>'
+        ),
         row=1, col=2
     )
-
-    # 3. Detrended
-    flux = df['flux'].values.astype(float)
-    denom = (df['time'].max() - df['time'].min())
-    time_norm = (df['time'] - df['time'].min())/denom if denom != 0 else df['time']
+    
+    # 3. Detrended Signal
+    flux = df['flux'].values
+    time_norm = (df['time'] - df['time'].min()) / (df['time'].max() - df['time'].min())
     slope, intercept, _, _, _ = stats.linregress(time_norm, flux)
-    detrended = flux - (slope*time_norm + intercept)
-
+    trend = slope * time_norm + intercept
+    detrended = flux - trend
+    
     fig.add_trace(
-        go.Scatter(x=df['time'], y=detrended, mode='lines', name='Detrended',
-                   line=dict(color='#ff9db2', width=2)),
+        go.Scatter(
+            x=df['time'],
+            y=detrended,
+            mode='lines',
+            name='Detrended Signal',
+            line=dict(color='#f093fb', width=2.5),
+            hovertemplate='<b>Time:</b> %{x:.4f}<br><b>Detrended:</b> %{y:.8f}<extra></extra>'
+        ),
         row=2, col=1
     )
-
-    # 4. Feature bars
-    feature_names = ['Mean', 'Std', 'Range', 'CV', 'Skew', 'Trend']
+    
+    fig.add_hline(y=0, line_dash="dash", line_color="#00f5ff", line_width=2, row=2, col=1)
+    
+    # 4. Top Features
+    feature_names = ['Mean', 'Std Dev', 'Range', 'CV', 'Skewness', 'Kurtosis', 'Trend', 'SNR']
     feature_values = [
-        abs(features.get('mean_flux', mean_flux)),
-        abs(features.get('std_flux', std_flux)),
-        abs(features.get('flux_range', flux_range)),
-        abs(features.get('cv_flux', cv_flux)),
-        abs(features.get('skewness', float(stats.skew(flux)))),
-        abs(features.get('trend_slope', float(slope)))
+        abs(features.get('mean_flux', mean_flux)) / 10000,
+        abs(features.get('std_flux', std_flux)) / 1000,
+        abs(features.get('flux_range', 0)) / 1000,
+        abs(features.get('cv_flux', 0)) * 1000,
+        abs(features.get('skewness', 0)) * 100,
+        abs(features.get('kurtosis', 0)) * 10,
+        abs(features.get('trend_slope', 0)) * 10000,
+        abs(extra_features.get('snr', 0))
     ]
+    
+    colors = ['#00f5ff', '#667eea', '#764ba2', '#f093fb', '#00ff88', '#ffbb00', '#ff0080', '#00d4aa']
+    
     fig.add_trace(
-        go.Bar(x=feature_names, y=feature_values, name='Features',
-               marker=dict(color='#7aa2ff', opacity=0.9)),
+        go.Bar(
+            x=feature_names,
+            y=feature_values,
+            name='Feature Values',
+            marker=dict(
+                color=colors,
+                opacity=0.8,
+                line=dict(color='#ffffff', width=2)
+            ),
+            hovertemplate='<b>%{x}:</b> %{y:.4f}<extra></extra>'
+        ),
         row=2, col=2
     )
-
-    fig.update_layout(
-        height=760, showlegend=True,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(18,26,42,0.95)',
-        font=dict(color='#e8eef8', size=12),
-        hovermode='closest',
-        margin=dict(l=40, r=20, t=60, b=40)
+    
+    # 5. Rolling Statistics
+    window = max(5, len(flux) // 20)
+    rolling_mean = pd.Series(flux).rolling(window=window, center=True).mean()
+    rolling_std = pd.Series(flux).rolling(window=window, center=True).std()
+    
+    fig.add_trace(
+        go.Scatter(
+            x=df['time'],
+            y=rolling_mean,
+            mode='lines',
+            name='Rolling Mean',
+            line=dict(color='#00ff88', width=3),
+            yaxis='y'
+        ),
+        row=3, col=1
     )
-    fig.update_xaxes(gridcolor='rgba(100,140,200,0.25)', gridwidth=1,
-                     title_font_color='#e8eef8', tickfont_color='#d6e0f2')
-    fig.update_yaxes(gridcolor='rgba(100,140,200,0.25)', gridwidth=1,
-                     title_font_color='#e8eef8', tickfont_color='#d6e0f2')
-
-    for ann in fig['layout']['annotations']:
-        ann['font'] = dict(size=14, color='#e8eef8')
+    
+    fig.add_trace(
+        go.Scatter(
+            x=df['time'],
+            y=rolling_std,
+            mode='lines',
+            name='Rolling Std',
+            line=dict(color='#ff0080', width=3, dash='dash'),
+            yaxis='y2'
+        ),
+        row=3, col=1, secondary_y=True
+    )
+    
+    # 6. Quality Gauge
+    quality_score = extra_features.get('data_quality_score', 50)
+    
+    fig.add_trace(
+        go.Indicator(
+            mode="gauge+number+delta",
+            value=quality_score,
+            title={'text': "Data Quality", 'font': {'size': 20, 'color': '#00f5ff'}},
+            delta={'reference': 75, 'increasing': {'color': "#00ff88"}},
+            gauge={
+                'axis': {'range': [None, 100], 'tickcolor': '#00f5ff'},
+                'bar': {'color': "#00f5ff"},
+                'bgcolor': "rgba(0,0,0,0.5)",
+                'borderwidth': 2,
+                'bordercolor': "#667eea",
+                'steps': [
+                    {'range': [0, 50], 'color': 'rgba(255, 0, 128, 0.3)'},
+                    {'range': [50, 75], 'color': 'rgba(255, 187, 0, 0.3)'},
+                    {'range': [75, 100], 'color': 'rgba(0, 255, 136, 0.3)'}
+                ],
+                'threshold': {
+                    'line': {'color': "#f093fb", 'width': 4},
+                    'thickness': 0.75,
+                    'value': 90
+                }
+            }
+        ),
+        row=3, col=2
+    )
+    
+    # Update layout
+    fig.update_layout(
+        height=1200,
+        showlegend=True,
+        paper_bgcolor='rgba(10, 14, 39, 0.95)',
+        plot_bgcolor='rgba(15, 25, 50, 0.9)',
+        font=dict(color='#e0f0ff', size=13, family='Rajdhani'),
+        hovermode='closest',
+        legend=dict(
+            bgcolor='rgba(10, 20, 40, 0.8)',
+            bordercolor='#00f5ff',
+            borderwidth=2,
+            font=dict(size=12)
+        )
+    )
+    
+    # Update axes
+    fig.update_xaxes(
+        gridcolor='rgba(0, 245, 255, 0.2)',
+        gridwidth=1,
+        showline=True,
+        linewidth=2,
+        linecolor='#00f5ff',
+        title_font_color='#00f5ff',
+        tickfont_color='#e0f0ff'
+    )
+    
+    fig.update_yaxes(
+        gridcolor='rgba(102, 126, 234, 0.2)',
+        gridwidth=1,
+        showline=True,
+        linewidth=2,
+        linecolor='#667eea',
+        title_font_color='#667eea',
+        tickfont_color='#e0f0ff'
+    )
+    
+    # Update subplot titles
+    for annotation in fig['layout']['annotations']:
+        annotation['font'] = dict(size=16, color='#00f5ff', family='Orbitron', weight='bold')
+    
     return fig
 
-# ================== Header ==================
-st.markdown('<div class="main-title">Exoplanet Detection AI Platform</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Machine Learning Classification · Stacking Ensemble · Operational Dashboard</div>', unsafe_allow_html=True)
+# --- Main Application ---
+apply_premium_theme()
 
-# ================== Sidebar ==================
+# Header
+st.markdown('<h1 class="main-title">🪐 Exoplanet Detection AI Platform</h1>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Advanced Machine Learning · Stacking Ensemble · Real-time Analysis</p>', unsafe_allow_html=True)
+
+# Enhanced Sidebar
 with st.sidebar:
-    st.markdown("#### Model Information")
+    st.markdown("### ⚙️ System Status")
+    
     model_exists = os.path.exists(MODEL_PATH)
     features_exist = os.path.exists(FEATURE_LIST_PATH)
-
-    st.markdown('<div class="card tight">', unsafe_allow_html=True)
-    st.write("Model Path:")
-    st.code(MODEL_PATH, language="text")
-    st.write("Features Path:")
-    st.code(FEATURE_LIST_PATH, language="text")
-    st.write(f"Model Exists: {model_exists}")
-    st.write(f"Features Exist: {features_exist}")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    if model_exists:
-        st.info("Model loaded.")
-    else:
-        st.warning("Demo mode.")
-
-    if features_exist and FEATURE_LIST:
-        st.success(f"Features loaded: {len(FEATURE_LIST)}")
-    elif features_exist:
-        st.success("Features file present.")
-    else:
-        st.info("Using default feature set.")
-
+    
+    # Status indicators
+    col1, col2 = st.columns(2)
+    with col1:
+        if model_exists:
+            st.success("✅ Model")
+        else:
+            st.warning("⚠️ Demo")
+    
+    with col2:
+        if features_exist:
+            st.success("✅ Features")
+        else:
+            st.info("ℹ️ Default")
+    
     st.markdown("---")
-    model_info = {
-        "Model Name": "new_model",
-        "Model Type": "Stacking Ensemble",
-        "Version": "20251004_211436",
+    
+    # Model specs
+    st.markdown("### 🤖 Model Info")
+    
+    specs = {
+        "Name": "Ensemble",
+        "Version": "v20251004",
         "Features": str(len(FEATURE_LIST)) if FEATURE_LIST else "20",
-        "Classes": "2 (PLANET / NOT_PLANET)",
-        "Training Samples": "23,289"
+        "Classes": "2",
+        "Samples": "23,289"
     }
-    for k, v in model_info.items():
-        st.metric(k, v)
-
+    
+    for key, value in specs.items():
+        st.metric(key, value)
+    
     st.markdown("---")
-    st.markdown("#### Data Requirements")
-    st.markdown("""
-    **Required Columns**
-    - Time column (time, t, BJD, MJD, etc.)
-    - Flux column (flux, f, brightness, etc.)
-
-    **Recommended**
-    - 100+ data points
-    - Clean, continuous data
-    """)
-
-    st.markdown("---")
-    show_features = st.checkbox("Show Extracted Features", value=False)
+    
+    # Quick Settings
+    st.markdown("### ⚙️ Settings")
+    
+    show_features = st.checkbox("Show Features", value=False)
     show_visualization = st.checkbox("Show Visualizations", value=True)
+    show_advanced = st.checkbox("Advanced Analysis", value=False)
+    auto_analyze = st.checkbox("Auto-Analyze", value=False)
+    
+    st.markdown("---")
+    
+    # Info Section
+    st.markdown("### 📋 Requirements")
+    st.info("""
+    **Required Columns:**  
+    • Time series data  
+    • Flux measurements
+    
+    **Optimal:**  
+    • 100+ data points  
+    • Clean, continuous data  
+    • Normalized flux
+    """)
+    
+    st.markdown("---")
+    
+    # Workflow
+    st.markdown("### 🔄 Workflow")
+    st.markdown("""
+    **1.** Upload CSV data  
+    **2.** Extract features  
+    **3.** Classify signal  
+    **4.** View results  
+    **5.** Export report
+    """)
+    
+    st.markdown("---")
+    
+    with st.expander("Debug Info", expanded=False):
+        st.code(f"Model: {os.path.exists(MODEL_PATH)}")
+        st.code(f"Features: {os.path.exists(FEATURE_LIST_PATH)}")
 
-# ================== Uploader ==================
-col1, col2, col3 = st.columns([1, 2, 1])
+# Main Content
+st.markdown("<br>", unsafe_allow_html=True)
+
+# Upload Section
+col1, col2, col3 = st.columns([1, 3, 1])
 with col2:
     uploaded_file = st.file_uploader(
-        "Upload Light Curve Data (CSV)",
+        "📁 Upload Light Curve Data (CSV Format)",
         type=['csv'],
-        help="CSV with time and flux. Column names auto-detected; manual selection available."
+        help="CSV file with time and flux columns - auto-detection enabled"
     )
 
-# ================== Main ==================
 if uploaded_file is not None:
     try:
-        with st.spinner('Loading light curve data...'):
+        # Loading animation
+        with st.spinner('⚡ Loading data...'):
             df = pd.read_csv(uploaded_file)
             time.sleep(0.2)
-
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.write(f"Detected columns: {', '.join(df.columns.tolist())}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        time_col, flux_col = None, None
+        
+        st.success(f"✅ **Data loaded: {len(df):,} records**")
+        
+        # Column detection
+        st.info(f"📋 **Detected columns:** `{', '.join(df.columns.tolist())}`")
+        
+        time_col = None
+        flux_col = None
+        
+        # Auto-detect columns
         for col in df.columns:
-            cl = col.lower().strip()
-            if cl in ['time','times','t','bjd','jd','mjd','timestamp']:
-                time_col = col if time_col is None else time_col
-            if cl in ['flux','fluxes','f','brightness','magnitude','mag','intensity']:
-                flux_col = col if flux_col is None else flux_col
-
+            col_lower = col.lower().strip()
+            if col_lower in ['time', 'times', 't', 'bjd', 'jd', 'mjd', 'timestamp', 'date']:
+                time_col = col
+            if col_lower in ['flux', 'fluxes', 'f', 'brightness', 'magnitude', 'mag', 'intensity', 'signal']:
+                flux_col = col
+        
         if time_col is None or flux_col is None:
-            st.warning("Auto-detection failed. Please select columns.")
-            c1, c2 = st.columns(2)
-            with c1:
-                time_col = st.selectbox("TIME column", df.columns.tolist(), index=0 if len(df.columns)>0 else None)
-            with c2:
-                flux_col = st.selectbox("FLUX column", df.columns.tolist(), index=1 if len(df.columns)>1 else None)
+            st.warning("⚠️ Please select columns manually:")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                time_col = st.selectbox("Select TIME column:", df.columns.tolist(), index=0)
+            with col2:
+                flux_col = st.selectbox("Select FLUX column:", df.columns.tolist(), index=1 if len(df.columns) > 1 else 0)
         else:
-            st.success(f"Auto-detected → Time: '{time_col}', Flux: '{flux_col}'")
-
+            st.success(f"✅ **Auto-detected:** Time = '{time_col}', Flux = '{flux_col}'")
+        
+        # Process data
         df_processed = df.copy()
         df_processed['time'] = df[time_col]
         df_processed['flux'] = df[flux_col]
-
-        if time_col is None or flux_col is None:
-            st.error("Please select both time and flux columns.")
-        else:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            c1, c2, c3 = st.columns(3)
-            c1.metric("Data Points", f"{len(df_processed):,}")
-            c2.metric("Time Span", f"{df_processed['time'].max() - df_processed['time'].min():.2f}")
-            c3.metric("Flux Range", f"{df_processed['flux'].max() - df_processed['flux'].min():.6f}")
-            st.dataframe(df_processed[['time','flux']].head(10), use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-            st.markdown("")
-            c1, c2, c3 = st.columns([1,1,1])
-            with c2:
-                analyze_button = st.button("Run Exoplanet Detection", use_container_width=True)
-
-            if analyze_button:
+        
+        # Data preview
+        with st.expander("📊 Data Preview & Statistics", expanded=True):
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">Data Points</div>
+                    <div class="metric-value">{len(df_processed):,}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">Time Span</div>
+                    <div class="metric-value">{df_processed['time'].max() - df_processed['time'].min():.2f}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">Mean Flux</div>
+                    <div class="metric-value">{df_processed['flux'].mean():.4f}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col4:
+                st.markdown(f"""
+                <div class="metric-card">
+                    <div class="metric-label">Std Dev</div>
+                    <div class="metric-value">{df_processed['flux'].std():.4f}</div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.dataframe(
+                df_processed[['time', 'flux']].head(15),
+                use_container_width=True,
+                height=300
+            )
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Action Buttons
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if auto_analyze or st.button("🚀 Run Analysis", use_container_width=True, type="primary"):
+                
+                # Enhanced progress bar
                 progress_bar = st.progress(0)
                 status_text = st.empty()
-
-                status_text.text("Step 1/5 — Preprocessing")
-                progress_bar.progress(20); time.sleep(0.2)
-
-                status_text.text("Step 2/5 — Extracting features")
-                features = extract_features(df_processed)
-                progress_bar.progress(40); time.sleep(0.2)
-                if features: st.info(f"Extracted {len(features)} features.")
-
-                status_text.text("Step 3/5 — Loading model")
+                
+                # Step 1
+                status_text.markdown("### ⚡ Step 1/5: Preprocessing data...")
+                progress_bar.progress(10)
+                time.sleep(0.3)
+                
+                # Step 2
+                status_text.markdown("### 🧠 Step 2/5: Extracting features...")
+                progress_bar.progress(30)
+                features, extra_features = extract_features(df_processed)
+                if features:
+                    st.success(f"✅ **Extracted {len(features)} features**")
+                time.sleep(0.3)
+                
+                # Step 3
+                status_text.markdown("### 🔮 Step 3/5: Loading model...")
+                progress_bar.progress(50)
                 model = load_model()
-                progress_bar.progress(60); time.sleep(0.15)
-
-                status_text.text("Step 4/5 — Classification")
+                time.sleep(0.2)
+                
+                # Step 4
+                status_text.markdown("### 🤖 Step 4/5: Running classification...")
+                progress_bar.progress(75)
                 results = predict_with_model(features, model)
-                progress_bar.progress(80); time.sleep(0.2)
-
-                status_text.text("Step 5/5 — Report generation")
-                progress_bar.progress(100); time.sleep(0.15)
-                progress_bar.empty(); status_text.empty()
-
-                # ---- Results ----
-                st.markdown("### Detection Results")
+                time.sleep(0.3)
+                
+                # Step 5
+                status_text.markdown("### 📊 Step 5/5: Generating results...")
+                progress_bar.progress(100)
+                time.sleep(0.2)
+                
+                progress_bar.empty()
+                status_text.empty()
+                
+                # Results Section
+                st.markdown("<br><br>", unsafe_allow_html=True)
+                st.markdown("## 🎯 Detection Results")
                 st.markdown("---")
-
-                cc1, cc2, cc3 = st.columns([1,2,1])
-                with cc2:
-                    if results['prediction'] == 'PLANET':
-                        st.markdown('<div class="status positive">PLANET</div>', unsafe_allow_html=True)
-                    else:
-                        st.markdown('<div class="status negative">NOT PLANET</div>', unsafe_allow_html=True)
-
-                st.markdown("")
-                st.markdown("#### Classification Confidence")
-                m1, m2, m3, m4 = st.columns(4)
-                with m1:
-                    st.markdown(f'<div class="metric-card"><div class="metric-label">Overall Confidence</div><div class="metric-value">{results["confidence"]:.1%}</div></div>', unsafe_allow_html=True)
-                with m2:
-                    st.markdown(f'<div class="metric-card"><div class="metric-label">Planet Probability</div><div class="metric-value">{results["planet_probability"]:.1%}</div></div>', unsafe_allow_html=True)
-                with m3:
-                    st.markdown(f'<div class="metric-card"><div class="metric-label">Not Planet Probability</div><div class="metric-value">{results["not_planet_probability"]:.1%}</div></div>', unsafe_allow_html=True)
-                with m4:
-                    st.markdown(f'<div class="metric-card"><div class="metric-label">Features Used</div><div class="metric-value">{results["feature_count"]}</div></div>', unsafe_allow_html=True)
-
-                st.markdown("")
-                i1, i2, i3 = st.columns(3)
-                i1.metric("Model Type", results['model_type'])
-                i2.metric("Model Version", results['model_version'])
-                i3.metric("Training Dataset", "23,289 samples")
-
-                # Guidance
-                st.markdown("#### Model Assessment")
-                if results['prediction'] == 'PLANET':
-                    if results['confidence'] > 0.85:
-                        st.info("High-confidence positive classification. Transit-like signal is strongly indicated.")
-                    elif results['confidence'] > 0.70:
-                        st.warning("Moderate confidence. Additional observation is recommended.")
-                    else:
-                        st.warning("Low confidence. Verification with further data is recommended.")
-                else:
-                    if results['confidence'] > 0.85:
-                        st.info("High-confidence negative classification.")
-                    else:
-                        st.warning("Uncertain negative. Consider collecting more data to improve certainty.")
-
-                # Data quality indicators
-                mean_f = features.get('mean_flux', float(df_processed['flux'].mean()))
-                std_f = features.get('std_flux', float(df_processed['flux'].std()))
-                cv_f = features.get('cv_flux', (std_f/mean_f) if mean_f else 0.0)
-                st.markdown("#### Data Quality Indicators")
-                st.markdown(f"- Signal-to-Noise (mean/std): **{(mean_f/std_f if std_f else 0):.2f}**")
-                st.markdown(f"- Coefficient of Variation: **{cv_f:.4f}**")
-                st.markdown(f"- Data Points: **{len(df_processed):,}**")
-
-                # Features
+                
+                # Main Prediction
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    prediction_class = "planet-detected" if results['prediction'] == 'PLANET' else "not-planet"
+                    icon = "🪐" if results['prediction'] == 'PLANET' else "🌑"
+                    label = "PLANET DETECTED" if results['prediction'] == 'PLANET' else "NO PLANET"
+                    
+                    st.markdown(f"""
+                    <div class="prediction-badge {prediction_class}">
+                        {icon} {label}
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # Metrics Grid
+                st.markdown("### ⚡ Classification Metrics")
+                col1, col2, col3, col4 = st.columns(4)
+                
+                with col1:
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-label">CONFIDENCE</div>
+                        <div class="metric-value">{results['confidence']:.1%}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-label">PLANET PROB</div>
+                        <div class="metric-value">{results['planet_probability']:.1%}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col3:
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-label">NOT PLANET</div>
+                        <div class="metric-value">{results['not_planet_probability']:.1%}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col4:
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-label">FEATURES</div>
+                        <div class="metric-value">{results['feature_count']}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # System Info
+                col1, col2, col3, col4 = st.columns(4)
+                col1.metric("Model Type", results['model_type'])
+                col2.metric("Version", results['model_version'])
+                col3.metric("Dataset", "23,289")
+                col4.metric("Features", results['feature_count'])
+                
+                # Features Display
                 if show_features and features:
-                    st.markdown("#### Extracted Features")
-                    left, right = st.columns(2)
-                    items = list(features.items())
-                    mid = len(items) // 2
-                    with left:
-                        st.markdown('<div class="card">', unsafe_allow_html=True)
-                        st.markdown("**Set A**")
-                        for k, v in items[:mid]:
-                            st.metric(k.replace('_',' ').title(), f"{v:.6f}" if isinstance(v,(int,float)) else str(v))
-                        st.markdown('</div>', unsafe_allow_html=True)
-                    with right:
-                        st.markdown('<div class="card">', unsafe_allow_html=True)
-                        st.markdown("**Set B**")
-                        for k, v in items[mid:]:
-                            st.metric(k.replace('_',' ').title(), f"{v:.6f}" if isinstance(v,(int,float)) else str(v))
-                        st.markdown('</div>', unsafe_allow_html=True)
-
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("## 🔬 Extracted Features")
+                    
+                    col1, col2 = st.columns(2)
+                    
+                    features_list = list(features.items())
+                    mid = len(features_list) // 2
+                    
+                    with col1:
+                        st.markdown("""
+                        <div class="analysis-card">
+                            <h3 style='color: #ffffff; margin-bottom: 1.5rem;'>Primary Features</h3>
+                        """, unsafe_allow_html=True)
+                        
+                        for key, value in features_list[:mid]:
+                            st.metric(
+                                key.replace('_', ' ').title(),
+                                f"{value:.8f}",
+                                delta=None
+                            )
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    with col2:
+                        st.markdown("""
+                        <div class="analysis-card">
+                            <h3 style='color: #ffffff; margin-bottom: 1.5rem;'>Secondary Features</h3>
+                        """, unsafe_allow_html=True)
+                        
+                        for key, value in features_list[mid:]:
+                            st.metric(
+                                key.replace('_', ' ').title(),
+                                f"{value:.8f}",
+                                delta=None
+                            )
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
+                
                 # Visualization
                 if show_visualization:
-                    st.markdown("#### Light Curve Analysis")
-                    fig = create_visualization_plot(df_processed, features)
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("## 📊 Light Curve Analysis")
+                    fig = create_visualization_plot(df_processed, features, extra_features)
                     st.plotly_chart(fig, use_container_width=True)
-
-                # Download
-                st.markdown("")
-                cdl1, cdl2, cdl3 = st.columns([1,1,1])
-                with cdl2:
-                    full_report = {**results, **features}
-                    report_df = pd.DataFrame([full_report])
-                    csv = report_df.to_csv(index=False)
+                
+                # Advanced Analysis
+                if show_advanced:
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("## 🔬 Advanced Analysis")
+                    
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("""
+                        <div class="analysis-card">
+                            <h3>Frequency Domain</h3>
+                        """, unsafe_allow_html=True)
+                        
+                        # FFT analysis
+                        from scipy.fft import fft, fftfreq
+                        flux_fft = fft(df_processed['flux'].values)
+                        n = len(df_processed)
+                        freq = fftfreq(n, df_processed['time'].diff().mean())
+                        
+                        st.metric("Dominant Frequency", f"{freq[np.argmax(np.abs(flux_fft[1:n//2]))+1]:.6f}")
+                        st.metric("FFT Peak Power", f"{np.max(np.abs(flux_fft[1:n//2])):.2f}")
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    with col2:
+                        st.markdown("""
+                        <div class="analysis-card">
+                            <h3>Statistical Tests</h3>
+                        """, unsafe_allow_html=True)
+                        
+                        # Normality test
+                        from scipy.stats import normaltest, kstest
+                        stat, p_value = normaltest(df_processed['flux'])
+                        
+                        st.metric("Normality p-value", f"{p_value:.6f}")
+                        st.metric("Skewness", f"{extra_features.get('skewness', 0):.4f}")
+                        st.metric("Kurtosis", f"{extra_features.get('kurtosis', 0):.4f}")
+                        
+                        st.markdown("</div>", unsafe_allow_html=True)
+                
+                # AI Summary
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("## 💡 Analysis Summary")
+                
+                if results['prediction'] == 'PLANET':
+                    st.success("✅ **Exoplanet Signature Confirmed**")
+                    st.markdown("""
+                    <p style='color: #ffffff; font-size: 1.15rem;'>
+                    The AI model has detected a strong exoplanet transit signature in the light curve data.
+                    This classification is based on advanced machine learning analysis of multiple signal features.
+                    </p>
+                    """, unsafe_allow_html=True)
+                    
+                    if results['confidence'] > 0.90:
+                        st.info("🎯 **Very High Confidence** - Excellent detection quality")
+                    elif results['confidence'] > 0.75:
+                        st.info("✅ **High Confidence** - Strong evidence of planetary transit")
+                    elif results['confidence'] > 0.60:
+                        st.warning("⚠️ **Moderate Confidence** - Additional verification recommended")
+                    else:
+                        st.warning("⚠️ **Low Confidence** - Requires further observation")
+                else:
+                    st.info("🌑 **No Exoplanet Detected**")
+                    st.markdown("""
+                    <p style='color: #ffffff; font-size: 1.15rem;'>
+                    The light curve does not show characteristic features of exoplanet transits.
+                    This may indicate stellar variability, noise, or other non-planetary phenomena.
+                    </p>
+                    """, unsafe_allow_html=True)
+                    
+                    if results['confidence'] > 0.85:
+                        st.success("✅ **High Certainty** in negative classification")
+                    else:
+                        st.warning("⚠️ Consider collecting additional data for better certainty")
+                
+                # Data Quality Report
+                st.markdown("### 📊 Data Quality Report")
+                
+                snr = extra_features.get('snr', df_processed['flux'].mean() / df_processed['flux'].std())
+                quality_score = extra_features.get('data_quality_score', 50)
+                
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("Signal-to-Noise Ratio", f"{snr:.2f}")
+                
+                with col2:
+                    st.metric("Data Quality Score", f"{quality_score:.1f}/100")
+                
+                with col3:
+                    variability = extra_features.get('cv_flux', features.get('cv_flux', 0))
+                    st.metric("Coefficient of Variation", f"{variability:.6f}")
+                
+                # Recommendations
+                st.markdown("### 🎯 Recommendations")
+                
+                recommendations = []
+                
+                if len(df_processed) < 50:
+                    recommendations.append("• **Increase data points** to at least 100 for better accuracy")
+                
+                if snr < 10:
+                    recommendations.append("• **Improve signal quality** through better instrumentation or longer exposure")
+                
+                if quality_score < 60:
+                    recommendations.append("• **Data preprocessing** may improve results (detrending, outlier removal)")
+                
+                if results['confidence'] < 0.70:
+                    recommendations.append("• **Additional observations** recommended for confirmation")
+                
+                if results['prediction'] == 'PLANET' and results['confidence'] > 0.85:
+                    recommendations.append("• **Strong candidate** - Submit for follow-up spectroscopy")
+                    recommendations.append("• **Document parameters** for publication")
+                
+                if recommendations:
+                    for rec in recommendations:
+                        st.markdown(rec)
+                else:
+                    st.success("✅ No additional recommendations - Data quality is excellent!")
+                
+                # Export Report
+                st.markdown("<br>", unsafe_allow_html=True)
+                st.markdown("### 💾 Export Analysis")
+                
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    full_report = {**results, **features, **extra_features}
+                    report_data = pd.DataFrame([full_report])
+                    csv = report_data.to_csv(index=False)
+                    
+                    timestamp = time.strftime('%Y%m%d_%H%M%S')
+                    
                     st.download_button(
-                        label="Download Full Report (CSV)",
+                        label="📥 Download Complete Report (CSV)",
                         data=csv,
-                        file_name=f"exoplanet_detection_report_{time.strftime('%Y%m%d_%H%M%S')}.csv",
+                        file_name=f"exoplanet_analysis_{timestamp}.csv",
                         mime="text/csv",
                         use_container_width=True
                     )
-
+    
     except Exception as e:
-        st.error(f"Error processing file: {str(e)}")
-        st.exception(e)
+        st.error(f"❌ **Error:** {str(e)}")
+        with st.expander("Error Details", expanded=False):
+            st.exception(e)
 
 else:
-    st.markdown("")
-    c1, c2, c3 = st.columns([1,2,1])
-    with c2:
-        # 帶虛線邊框的上傳說明區（標題為純白）
+    # Welcome Screen
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
         st.markdown("""
-        <div class="upload-card">
-            <h4>Upload Light Curve Data</h4>
-            <p>Provide a CSV with time and flux columns. The system will auto-detect column names or allow manual selection.</p>
-            <small>Supported time columns: TIME / T / BJD / JD / MJD · Supported flux columns: FLUX / F / BRIGHTNESS / MAG</small>
+        <div style='text-align: center; padding: 4rem; 
+             background: rgba(22, 33, 62, 0.7); 
+             border-radius: 25px; 
+             border: 3px dashed rgba(102, 126, 234, 0.6);'>
+            <h2 style='color: #ffffff; margin-bottom: 1.5rem; font-size: 2.5rem; font-weight: 700;'>
+                🪐 Upload Light Curve Data
+            </h2>
+            <p style='color: #ffffff; font-size: 1.35rem; margin-bottom: 2rem; font-weight: 500;'>
+                CSV format with time and flux measurements
+            </p>
+            <div style='background: rgba(10, 20, 40, 0.6); padding: 2rem; border-radius: 15px; border: 2px solid rgba(102, 126, 234, 0.3);'>
+                <p style='color: #ffffff; font-size: 1.2rem; margin: 0.9rem 0; font-weight: 500;'>✅ CSV Format Supported</p>
+                <p style='color: #ffffff; font-size: 1.2rem; margin: 0.9rem 0; font-weight: 500;'>🔍 Auto Column Detection</p>
+                <p style='color: #ffffff; font-size: 1.2rem; margin: 0.9rem 0; font-weight: 500;'>⚡ Real-Time Processing</p>
+                <p style='color: #ffffff; font-size: 1.2rem; margin: 0.9rem 0; font-weight: 500;'>🎯 High Accuracy AI Model</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # Feature Highlights
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        <div class="analysis-card" style="text-align: center;">
+            <h2 style='font-size: 3rem;'>🧠</h2>
+            <h3 style='font-size: 1.5rem; color: #ffffff; font-weight: 700;'>Machine Learning</h3>
+            <p style='font-size: 1.15rem; color: #ffffff;'>Advanced ensemble with multi-layer feature extraction</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class="analysis-card" style="text-align: center;">
+            <h2 style='font-size: 3rem;'>⚡</h2>
+            <h3 style='font-size: 1.5rem; color: #ffffff; font-weight: 700;'>Real-Time Analysis</h3>
+            <p style='font-size: 1.15rem; color: #ffffff;'>Instant classification with signal processing</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown("""
+        <div class="analysis-card" style="text-align: center;">
+            <h2 style='font-size: 3rem;'>🎯</h2>
+            <h3 style='font-size: 1.5rem; color: #ffffff; font-weight: 700;'>High Precision</h3>
+            <p style='font-size: 1.15rem; color: #ffffff;'>Validated on astronomical datasets</p>
         </div>
         """, unsafe_allow_html=True)
 
-# ================== Footer ==================
+# Footer
+st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("""
-<hr style="border-color: rgba(36,49,74,.6); margin-top:2rem;"/>
-<div style='text-align:center; color:#c6d2e6; padding-top: .6rem;'>
-    <div style="font-size:.95rem;">Exoplanet Detection AI Platform — Stacking Ensemble v20251004_211436</div>
-    <div style="font-size:.85rem; opacity:.85; margin-top:.2rem;">Training sources: TESS, Kepler, Confirmed Planets</div>
+<div style='text-align: center; color: #ffffff; padding: 2.5rem; 
+     border-top: 2px solid rgba(102, 126, 234, 0.4);
+     background: rgba(10, 20, 40, 0.5);'>
+    <p style='font-size: 1.25rem; margin-bottom: 1rem; color: #ffffff; font-weight: 600;'>
+        🪐 Exoplanet Detection AI Platform
+    </p>
+    <p style='font-size: 1.1rem; color: #ffffff;'>
+        Stacking Ensemble Model v20251004_211436 | Trained on 23,289 Samples
+    </p>
+    <p style='font-size: 1rem; color: #e0e0e0; margin-top: 1rem;'>
+        TESS · Kepler · Confirmed Planets Datasets
+    </p>
 </div>
 """, unsafe_allow_html=True)
