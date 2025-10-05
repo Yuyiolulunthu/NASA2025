@@ -3,7 +3,7 @@ Exoplanet Vetting Platform — Enterprise (No Emoji)
 - Bottom candidate bar (sticky at bottom)
 - Removed duplicate candidate indicator
 - Confirm button: subtle dark red, hover keeps effect
-- Confirm aligned with left edge of decision radios
+- Confirm aligned inline to the right of the decision radios
 Run:
     streamlit run vetting_only.py
 """
@@ -38,6 +38,7 @@ hide_streamlit_header_style = """
     </style>
 """
 st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
+
 # ========== CSS ==========
 st.markdown(
     """
@@ -47,8 +48,8 @@ st.markdown(
     --panel:#121a36; --panel-2:#141c3b;
     --text-0:#e8ecf3; --text-1:#c8d0e3; --text-2:#8b95af;
     --brand:#4d7cff; --accent:#2bd4a7; --ring:#27376f; --border:#1f2c5b;
-    --banner-h: 72px;             /* 你的 banner 預估高度 */
-    --bottombar-h: 64px;          /* 底部候選人條高度 */
+    --banner-h: 72px;
+    --bottombar-h: 64px;
   }
 
   .stApp{
@@ -60,13 +61,12 @@ st.markdown(
     border-right:1px solid var(--ring);
   }
 
-  /* ====== 內容間距：上方為 banner 預留、下方為底部條預留 ====== */
   body > .main, div.block-container, main[role="main"]{
     padding-top: calc(var(--banner-h) + 16px) !important;
     padding-bottom: calc(var(--bottombar-h) + 16px) !important;
   }
 
-  /* ====== Bottom candidate bar（取代原本上方版本） ====== */
+  /* ====== Bottom candidate bar ====== */
   #bottom-progress{
     position:fixed; left:0; right:0; bottom:0;
     height: var(--bottombar-h); z-index: 900; pointer-events:none;
@@ -90,11 +90,11 @@ st.markdown(
 
   /* ====== Confidence bar ====== */
   .conf-wrap{ margin:8px 0 2px 0; }
-  .conf-bar{ height:26px; border-radius:999px; background:linear-gradient(90deg, #ef4444, #f59e0b, #10b981); position:relative; overflow:hidden; border:1px solid var(--ring);}
+  .conf-bar{ height:26px; border-radius:999px; background:linear-gradient(90deg, #ef4444, #f59e0b, #10b981); position:relative; overflow:hidden; border:1px solid var(--ring); }
   .conf-ind{ position:absolute; top:0; left:0; height:100%; background:rgba(255,255,255,.25); border-right:3px solid #fff; box-shadow:0 0 16px rgba(255,255,255,.35); }
   .muted{ color:var(--text-2); }
 
-  /* ====== Decision radios：大字體 + 間距 + 換行（無 transform:scale，避免覆蓋） ====== */
+  /* ====== Decision radios ====== */
   [data-testid="stRadio"] * { color:#ffffff !important; }
   [data-testid="stRadio"] div[role="radiogroup"]{
       display:flex; flex-wrap:wrap; column-gap:1.75rem; row-gap:.6rem; align-items:center;
@@ -106,16 +106,29 @@ st.markdown(
   [data-testid="stRadio"] label span{
       font-size:1.35rem !important; line-height:1.35rem !important; font-weight:600 !important;
   }
-  .decision-block{ margin-bottom: .75rem; }  /* 與 Confirm 拉出間距，避免視覺擁擠 */
+  .decision-block{ margin-bottom: .3rem; }
 
-  /* ====== Confirm（微深紅底；只針對 form 內的按鈕） ====== */
+  /* ====== Confirm（微深紅：保留原有設計） ====== */
   [data-testid="stForm"] button{
-    background:#8b1f1f !important;          /* 微深紅 */
+    background:#8b1f1f !important;
     border: 1px solid #7a1b1b !important;
     color:#fff !important; font-weight:800 !important;
     border-radius:10px !important;
   }
-  [data-testid="stForm"] button:hover{ filter: brightness(1.06); }  /* Hover 效果保留 */
+  [data-testid="stForm"] button:hover{ filter: brightness(1.06); }
+
+  /* ====== 底部三個按鈕：黑底白字（只影響非 form 的 st.button） ====== */
+  [data-testid="stButton"] button{
+    background:#000 !important;
+    color:#fff !important;
+    border:1px solid #222 !important;
+  }
+  [data-testid="stRadio"] label:has(span:contains("False Positive")) span,
+[data-testid="stRadio"] label:has(span:contains("Planet Candidate")) span,
+[data-testid="stRadio"] label:has(span:contains("Confirmed Planet")) span {
+    font-size: 1.6rem !important;
+    line-height: 1.6rem !important;
+}
 </style>
 """,
     unsafe_allow_html=True,
@@ -242,7 +255,7 @@ def render_vetting():
     total = len(candidates)
     pct = int(((idx + 1) / total) * 100) if total else 0
 
-    # === 底部固定候選人條（唯一的 candidate 指示；上方那個已移除） ===
+    # === Bottom progress ===
     st.markdown(
         f"""
         <div id="bottom-progress">
@@ -285,8 +298,7 @@ def render_vetting():
 
     cur = candidates[idx]
 
-    # 移除另一個 candidate 指示（原本的 st.progress 已刪除）
-
+    # Target summary
     st.markdown(
         f"""
         <div class='card' style='padding:12px 16px; margin-top:8px;'>
@@ -332,22 +344,25 @@ def render_vetting():
         fig_zoom = create_transit_zoom(cur, transit_num, height=520)
         st.plotly_chart(fig_zoom, use_container_width=True, config={"displayModeBar": False})
 
-    # === Decision + Confirm（Confirm 與左側 radios 對齊；Confirm 微深紅） ===
+    # === Decision + Confirm（同一行：Confirm 在「Confirmed Planet」右邊） ===
     st.subheader("Vetting Decision")
 
-    st.markdown("<div class='decision-block'>", unsafe_allow_html=True)
-    decision = st.radio(
-        "Select a label",
-        options=["False Positive", "Planet Candidate", "Confirmed Planet"],
-        horizontal=True,
-        key=f"decision_{idx}",
-        label_visibility="collapsed",
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+    # 左側：radio；右側：Confirm（保持原本微深紅色樣式，仍用 form_submit_button）
+    col_radio, col_confirm = st.columns([8, 2])
+    with col_radio:
+        st.markdown("<div class='decision-block'>", unsafe_allow_html=True)
+        decision = st.radio(
+            "Select a label",
+            options=["False Positive", "Planet Candidate", "Confirmed Planet"],
+            horizontal=True,
+            key=f"decision_{idx}",
+            label_visibility="collapsed",
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    # 讓 Confirm 就貼在 radios 下方，天然左對齊
-    with st.form(f"decision_form_{idx}", clear_on_submit=False):
-        confirm = st.form_submit_button("Confirm", use_container_width=False)
+    with col_confirm:
+        with st.form(f"decision_form_{idx}", clear_on_submit=False):
+            confirm = st.form_submit_button("Confirm", use_container_width=True)
 
     if confirm:
         mapping = {
@@ -361,7 +376,7 @@ def render_vetting():
         time.sleep(0.1)
         st.rerun()
 
-    # 其他控制鍵（保留）
+    # === Bottom actions（預設黑底白字）===
     col_prev, col_skip, col_reset = st.columns([1, 1, 1])
     with col_prev:
         if st.button("Previous", use_container_width=True, disabled=(idx == 0)):
