@@ -8,6 +8,14 @@ st.set_page_config(
     page_icon="Web/logo.png",
     layout="wide",
 )
+hide_streamlit_header_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 
 # ---------- Banner & 隱藏 ----------
 render_banner()
@@ -16,6 +24,7 @@ st.markdown("""
 #MainMenu, footer, header {visibility:hidden;}
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---------- CSS + 靜態 HTML ----------
 st.markdown("""
@@ -89,8 +98,8 @@ st.markdown("""
 .front-content .side-actions a { pointer-events: auto; }
 
 /* HERO 內容 */
-.hero{max-width:760px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;}
-.space-title{margin:0;color:#fff;font-weight:900;font-size:clamp(6.5rem, 16.4vw, 12.5rem);letter-spacing:.06em;text-shadow:0 2px 6px rgba(0,0,0,.35);}
+.hero{max-width:760px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.2rem;}
+.space-title{margin:0;color:#fff;font-weight:900;font-size:clamp(6.5rem, 10.4vw, 6.5rem);letter-spacing:.06em;text-shadow:0 2px 6px rgba(0,0,0,.35);}
 .subtitle{margin:.25rem 0 0 0;color:#f5f7ff;opacity:.96;font-weight:700;font-size:clamp(1.35rem,3.2vw,2.05rem);text-shadow:0 2px 6px rgba(0,0,0,.30);} 
 .lead{margin:.25rem 0 0 0;color:#d9e1ff;opacity:.9;font-weight:500;font-size:clamp(0.95rem,1.7vw,1.05rem);} 
 
@@ -132,7 +141,7 @@ st.markdown('<div class="front-content">', unsafe_allow_html=True)
 st.markdown(
     """
 <section class="hero" id="hero">
-  <h1 class="space-title">ExoMatch</h1>
+  <h0 class="space-title">ExoMatch</h0>
   <p class="subtitle">AI × Human collaboration platform for professional exoplanet analysis</p>
   <p class="lead">Start with a clear path. Choose one of the options below based on what you want to do today.</p>
   <nav class="side-actions" aria-label="Primary">
