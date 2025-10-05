@@ -24,7 +24,7 @@ except Exception:
 # ========== Page Config ==========
 st.set_page_config(
     page_title="Exoplanet Hunter — Vetting",
-    page_icon="🌌",
+    page_icon="Web/logo.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -143,7 +143,7 @@ if "candidate_index" not in st.session_state:
     st.session_state.candidate_index = 0
 if "candidates" not in st.session_state:
     st.session_state.candidates = []
-    rng = np.random.default_rng(7)
+    rng = np.random.default_rng()
     for i in range(10):
         t = np.linspace(0, 50, 500)
         f = 1 + rng.normal(0, 0.002, 500)
@@ -155,7 +155,7 @@ if "candidates" not in st.session_state:
             events.append(float(tt))
         st.session_state.candidates.append(
             {
-                "id": f"TIC-{200000+i}",
+                "id": f"TIC-{200000+rng.integers(0, 99999)}",
                 "time": t,
                 "flux": f,
                 "period": float(period),
@@ -164,7 +164,7 @@ if "candidates" not in st.session_state:
                 "snr": float(rng.uniform(10, 50)),
                 "radius_ratio": float(rng.uniform(0.05, 0.15)),
                 "ai_confidence": float(rng.uniform(0.5, 0.95)),
-                "transit_times": events[:3],
+                "transit_times": events,
                 "color_index": float(rng.uniform(0.5, 1.5)),
                 "effective_temp": float(rng.uniform(4000, 7000)),
             }
