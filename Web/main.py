@@ -8,6 +8,14 @@ st.set_page_config(
     page_icon="Web/logo.png",
     layout="wide",
 )
+hide_streamlit_header_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 
 # ---------- Banner & 隱藏 ----------
 render_banner()
@@ -16,6 +24,7 @@ st.markdown("""
 #MainMenu, footer, header {visibility:hidden;}
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---------- CSS + 靜態 HTML ----------
 st.markdown("""
@@ -43,7 +52,7 @@ st.markdown("""
 
 /* 星體與行星 */
 .star{
-  position:absolute; top:50%; left:55%;   /* ← 原本 38%，改 70% 讓星體更靠右 */
+  position:absolute; top:50%; left:55%; /* 將星體偏右，保留視覺重心 */
   transform:translate(-50%,-50%);
   width:360px;height:360px;border-radius:50%;
   background:radial-gradient(circle at 32% 30%,#fff8e1,#f5b971 70%,#9e6c33 100%);
@@ -51,7 +60,7 @@ st.markdown("""
   z-index:3;transition:filter .18s,box-shadow .18s;
 }
 .planet{
-  position:absolute; top:50%; left:130%;   /* ← 從更右邊出發（原 110%） */
+  position:absolute; top:50%; left:130%;
   transform:translateY(-50%) scale(0.9);
   width:72px;height:72px;border-radius:50%;
   background:radial-gradient(circle at 30% 30%,#1a1a1a,#333);
@@ -59,7 +68,7 @@ st.markdown("""
   animation:transit 12s linear infinite;
 }
 @keyframes transit{
-  0%{ left:130%; opacity:0; }   /* ← 起點更右 */
+  0%{ left:130%; opacity:0; }
   6%{ opacity:1; }
   94%{ opacity:1; }
   100%{ left:-10%; opacity:0; }
@@ -77,39 +86,45 @@ st.markdown("""
   left:0;right:50vw;
   width:auto;height:calc(100vh - var(--banner-height));
   display:flex;align-items:center;justify-content:center;
-  z-index:9999; /* 提高到較高層級，確保在上方 */
+  z-index:9999; /* 確保在上方 */
   padding:2rem;box-sizing:border-box;
   pointer-events: auto; /* 允許互動 */
 }
 
-/* 確保所有 hero 子元素可互動（避免上層 pointer-events:none 影響） */
+/* 確保所有 hero 子元素可互動 */
 .front-content .hero,
-.front-content .hero * ,
+.front-content .hero *,
 .front-content .side-actions,
-.front-content .side-actions a {
-  pointer-events: auto;
-}
+.front-content .side-actions a { pointer-events: auto; }
 
 /* HERO 內容 */
-.hero{max-width:720px;width:100%;text-align:center;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;}
-.space-title{margin:0;color:#fff;font-weight:900;font-size:clamp(3rem,8vw,6rem);letter-spacing:.1em;text-shadow:0 2px 6px rgba(0,0,0,.35);}
-.subtitle{margin:.3rem 0 0 0;color:#f5f7ff;opacity:.96;font-weight:700;font-size:clamp(1.6rem,3.5vw,2.2rem);text-shadow:0 2px 6px rgba(0,0,0,.30);}
+.hero{max-width:760px;width:100%;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.2rem;}
+.space-title{margin:0;color:#fff;font-weight:900;font-size:clamp(6.5rem, 10.4vw, 6.5rem);letter-spacing:.06em;text-shadow:0 2px 6px rgba(0,0,0,.35);}
+.subtitle{margin:.25rem 0 0 0;color:#f5f7ff;opacity:.96;font-weight:700;font-size:clamp(1.35rem,3.2vw,2.05rem);text-shadow:0 2px 6px rgba(0,0,0,.30);} 
+.lead{margin:.25rem 0 0 0;color:#d9e1ff;opacity:.9;font-weight:500;font-size:clamp(0.95rem,1.7vw,1.05rem);} 
 
-/* 2×2 快捷連結 */
+/* 2×2 導覽卡片（含引導文字） */
 .side-actions{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:1.2rem;width:420px;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:1.2rem;width:760px;max-width:100%;
   z-index:10000;
 }
 .side-actions a{
-  position:relative;
-  z-index:10001;
-  display:inline-flex;align-items:center;justify-content:center;
-  padding:.75rem 1rem;font-weight:800;color:#e6eefc;text-decoration:none;
-  background:rgba(20,30,60,0.6);border:1px solid rgba(99,102,241,.14);
-  border-radius:10px;transition:background .16s,transform .12s,color .16s,border-color .16s;
+  position:relative; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; text-align:left;
+  padding:1rem 1.1rem 1.05rem 1.1rem; gap:.35rem; width:100%; min-height:112px;
+  font-weight:700; color:#e6eefc; text-decoration:none;
+  background:linear-gradient(180deg, rgba(20,30,60,0.65) 0%, rgba(18,28,52,0.50) 100%);
+  border:1px solid rgba(129,140,248,.18);
+  border-radius:10px; transition:background .16s,transform .12s,color .16s,border-color .16s, box-shadow .16s;
 }
-.side-actions a:hover{background:#e5e7eb;color:#0b1220;transform:translateY(-2px);border-color:rgba(99,102,241,.5);}
+.side-actions a:focus-visible{outline:2px solid #7aa2ff; outline-offset:2px; border-radius:12px;}
+.side-actions a:hover{
+  background:rgba(229,231,235,0.96); color:#0b1220; transform:translateY(-2px);
+  border-color:rgba(99,102,241,.55); box-shadow:0 10px 30px rgba(0,0,0,.30);
+}
+.card-title{font-size:1.75rem; line-height:1.25; letter-spacing:.03em; font-weight:800;}
+.card-desc{font-size:.92rem; line-height:1.35; font-weight:550; opacity:.88;}
+
+/* 小尺寸時改為單欄 */
 @media(max-width:900px){.side-actions{width:100%;grid-template-columns:1fr;}}
 </style>
 
@@ -123,22 +138,39 @@ st.markdown("""
 
 # ---------- HERO (左半) ----------
 st.markdown('<div class="front-content">', unsafe_allow_html=True)
-st.markdown("""
+st.markdown(
+    """
 <section class="hero" id="hero">
   <h0 class="space-title">ExoMatch</h0>
-  <p class="subtitle">AI × Human collaboration platform for professional and educational exoplanet analysis.</p>
-  <nav class="side-actions">
-    <a href="/about" target="_self">About our model</a>
-    <a href="/analyze" target="_self">Analyze your data</a>
-    <a href="/fits_converter" target="_self">FITS Converter</a>
-    <a href="/vetting" target="_self">Learning about vetting</a>
+  <p class="subtitle">AI × Human collaboration platform for professional exoplanet analysis</p>
+  <p class="lead">Start with a clear path. Choose one of the options below based on what you want to do today.</p>
+  <nav class="side-actions" aria-label="Primary">
+    <a href="/about" target="_self" aria-label="About our model">
+      <span class="card-title">About our model</span>
+      <span class="card-desc">How we approach ~96% validated accuracy: rigorous cross-validation, mission-to-mission generalization, and ablation-backed design choices.</span>
+    </a>
+    <a href="/analyze" target="_self" aria-label="Analyze your data">
+      <span class="card-title">Analyze your data</span>
+      <span class="card-desc">Upload TESS/Kepler light curves (single or batch). We denoise, extract features, and classify — whether you’re hunting a new candidate or taming a large dataset.</span>
+    </a>
+    <a href="/fits_converter" target="_self" aria-label="FITS Converter">
+      <span class="card-title">FITS Converter</span>
+      <span class="card-desc">Turn FITS into calibrated light curves and visual diagnostics in seconds. ESA-aligned tools integrated with our prediction model to surface all target context on one screen.</span>
+    </a>
+    <a href="/vetting" target="_self" aria-label="Learning about vetting">
+      <span class="card-title">Learning about vetting</span>
+      <span class="card-desc">New to vetting or curious about the ML pipeline? Explore real cases, decision criteria, and best practices to build expert-level intuition.</span>
+    </a>
   </nav>
 </section>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ---------- JS：暗化控制 ----------
-html("""
+html(
+    """
 <script>
 (function(){
   const THRESHOLD = 200; // px
@@ -168,4 +200,6 @@ html("""
   else (window.parent||window).addEventListener('load',ready);
 })();
 </script>
-""", height=0)
+""",
+    height=0,
+)
