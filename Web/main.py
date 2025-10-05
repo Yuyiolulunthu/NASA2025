@@ -54,15 +54,21 @@ st.markdown("""
 /* ===== Foreground content ===== */
 .front-content{ position:relative; z-index:2; }
 
-/* ===== HERO (微下移 + 置中) ===== */
+/* ===== HERO (置中) ===== */
 .hero{
   min-height:100vh;
   display:flex; flex-direction:column; align-items:center; text-align:center;
-  justify-content:flex-start;
-  padding-top:clamp(22vh, 24vh, 28vh);     /* ⬅ 再下移一點點（原來 20~26vh） */
-  padding-inline:2rem; gap:1rem;
+  justify-content:center;
+  padding-inline:2rem; gap:2rem;
 }
-.hero-inner{ transform-origin:center top; transition:transform .06s linear; }
+.hero-inner{ 
+  transform-origin:center; 
+  transition:transform .06s linear;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
 
 /* Title + Subtitle (極淡黑色光暈，提升可讀性但不明顯) */
 .space-title{
@@ -76,21 +82,37 @@ st.markdown("""
   text-shadow:0 2px 6px rgba(0,0,0,.30), 0 0 3px rgba(0,0,0,.30);
 }
 
-/* CTA 包層：方框再往下 */
-.cta-wrap{ margin-top:clamp(18vh, 14vh, 18vh); }  /* ⬅ 再下移（原來 10~15vh） */
-
-/* CTA 方框（半透明、硬邊） */
-.square-btn{
-  display:inline-flex; align-items:center; justify-content:center;
-  width:260px; height:66px;
-  font-weight:900; font-size:1.15rem; letter-spacing:.08em;
-  color:#fff; background:rgba(0,0,0,.18);
-  border:2px solid rgba(235,238,245,.95); border-radius:0;
-  backdrop-filter:blur(.5px);
-  transition:transform .22s ease, background .22s ease, color .22s ease, border-color .22s ease;
-  user-select:none; cursor:pointer;
+/* CTA 包層 */
+.cta-wrap{ 
+  margin-top: 1rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
-.square-btn:hover{ background:#fff; color:#0c1225; border-color:#fff; transform:translateY(-2px); }
+
+/* ===== 統一按鈕樣式 ===== */
+.stButton > button {
+  background: rgba(20, 30, 60, 0.85) !important;
+  color: #ffffff !important;
+  border: 2px solid rgba(80, 120, 200, 0.6) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 1.05rem !important;
+  padding: 0.75rem 1.5rem !important;
+  transition: all 0.3s ease !important;
+}
+
+.stButton > button:hover {
+  background: rgba(63, 169, 245, 0.25) !important;
+  border-color: rgba(63, 169, 245, 0.9) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(63, 169, 245, 0.3) !important;
+}
+
+.stButton > button:active {
+  transform: translateY(0px) !important;
+}
 
 /* ===== Main section ===== */
 .main-wrap{ position:relative; z-index:2; padding:1rem 0 0 0; }
@@ -120,7 +142,13 @@ st.markdown("""
     <h1 class="space-title">EXOPLANET HUNTER</h1>
     <p class="subtitle">AI × Human Collaboration Platform for Professional Exoplanet Vetting</p>
     <div class="cta-wrap">
-      <div class="square-btn" id="startAnalyzingBtn">&gt; Start Analyzing</div>
+""", unsafe_allow_html=True)
+
+# CTA 按鈕
+if st.button("> Start Analyzing", key="start_analyzing_hero"):
+    st.switch_page("pages/analyze.py")
+
+st.markdown("""
     </div>
   </div>
 </section>
@@ -146,9 +174,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 b1, b2, b3 = st.columns(3)
-with b1: st.button("Start Vetting", use_container_width=True, key="btn_start")
-with b2: st.button("Candidate Database", use_container_width=True, key="btn_db")
-with b3: st.button("User Contributions", use_container_width=True, key="btn_user")
+with b1:
+    if st.button("Start Vetting", use_container_width=True, key="btn_start"):
+        st.switch_page("pages/vetting.py")
+with b2:
+    if st.button("Candidate Database", use_container_width=True, key="btn_db"):
+        st.switch_page("pages/analyze.py")
+with b3:
+    if st.button("User Contributions", use_container_width=True, key="btn_user"):
+        st.switch_page("pages/about.py")
 
 st.markdown('<br><br><div style="text-align:center;color:#aaa;">Exoplanet Hunter v3.7 — Micro Downshift + Guaranteed Fade</div>', unsafe_allow_html=True)
 st.markdown('</div></div>', unsafe_allow_html=True)
@@ -166,20 +200,11 @@ st.markdown("""
 
   onReady(function(){
     const hero = document.getElementById('hero');
-    const main = document.getElementById('mainContent');
-    const startBtn = document.getElementById('startAnalyzingBtn');
     const globalDimmer = document.getElementById('globalDimmer');
     const transitBg   = document.getElementById('transitBg');
 
     // In case any element missing, bail gracefully
     if (!globalDimmer || !transitBg) return;
-
-    // Smooth scroll
-    if (startBtn && main){
-      startBtn.addEventListener('click', function(){
-        main.scrollIntoView({behavior:'smooth', block:'start'});
-      });
-    }
 
     const DIM_MAX = 0.85;      // 全頁最暗不透明度（越大越暗）
     const BG_MIN  = 0.35;      // 背景最小亮度（越小越暗）
