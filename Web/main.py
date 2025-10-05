@@ -139,7 +139,6 @@ st.markdown("""
   <h0 class="space-title">ExoMatch</h0>
   <p class="subtitle">AI × Human collaboration platform for professional and educational exoplanet analysis of the next generation.</p>
   <div class="cta-wrap">
-    <div class="cta-button" onclick="window.location.href='/pages/analyze'">&gt; Start Analyzing</div>
   </div>
             
 </section>
