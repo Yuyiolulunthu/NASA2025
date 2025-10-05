@@ -16,14 +16,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-hide_streamlit_header_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    </style>
-"""
-st.markdown(hide_streamlit_header_style, unsafe_allow_html=True)
 render_banner()
 
 # ---- Session State (persist across reruns) ----
@@ -37,13 +29,20 @@ if 'last_upload_token' not in st.session_state:
     st.session_state.last_upload_token = None   # 用來偵測是否換了新檔
 
 # ---- Hide default header/footer ----
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+""", unsafe_allow_html=True)
 
 # ========== Paths ==========
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
 MODELS_DIR = os.path.join(PROJECT_ROOT, 'models')
 FEATURE_LIST_PATH = os.path.join(MODELS_DIR, 'feature_list.json')
-MODEL_PATH = os.path.join(MODELS_DIR, '\exoplanet_model_20251005_231130.pkl')
+MODEL_PATH = os.path.join(MODELS_DIR, 'exoplanet_model_20251005_233536.pkl')
 
 # ========== THEME ==========
 def apply_premium_theme():

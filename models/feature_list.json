@@ -19,7 +19,7 @@
     "insolation",
     "log_snr"
   ],
-  "version": "20251005_231130",
+  "version": "20251005_233536",
   "data_source": "NASA TESS TOI",
   "random_state": 42,
   "is_deterministic": true
